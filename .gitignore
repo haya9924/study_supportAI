@@ -1,0 +1,28 @@
+# Data (uploads, page images, SQLite DB)
+/data/
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+frontend/dist/
+backend/frontend_dist/
+*.tsbuildinfo
+npm-debug.log*
+.vite/
+
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/

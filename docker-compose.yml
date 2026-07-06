@@ -1,0 +1,18 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      # データ保存先 (コンテナ内)
+      DATA_DIR: /data
+      # LLM_MOCK=1 で外部 API なしのデモ起動が可能
+      LLM_MOCK: "${LLM_MOCK:-0}"
+      # 初期 LLM 設定 (起動後に設定画面から変更可)
+      OPENAI_BASE_URL: "${OPENAI_BASE_URL:-https://openrouter.ai/api/v1}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      VISION_MODEL: "${VISION_MODEL:-google/gemini-2.5-flash}"
+      TEXT_MODEL: "${TEXT_MODEL:-google/gemini-2.5-flash}"
+    restart: unless-stopped
