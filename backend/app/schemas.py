@@ -41,6 +41,7 @@ class CourseOut(ORMModel):
     id: int
     name: str
     created_at: datetime
+    material_count: int = 0
 
 
 # --- materials ---
@@ -69,6 +70,10 @@ class MaterialDetail(MaterialOut):
 
 class PageTextIn(BaseModel):
     ocr_text: str
+
+
+class MaterialMoveIn(BaseModel):
+    course_id: int | None = None
 
 
 # --- generation ---

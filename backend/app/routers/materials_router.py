@@ -21,15 +21,21 @@ from sqlalchemy.orm import Session
 from .. import ocr, schemas
 from ..config import settings
 from ..db import get_db
-from ..models import Job, Material, MaterialPage
+from ..models import Course, Job, Material, MaterialPage
 
 router = APIRouter(prefix="/api/materials", tags=["materials"])
 
 
 @router.get("", response_model=list[schemas.MaterialOut])
-def list_materials(course_id: int | None = None, db: Session = Depends(get_db)):
+def list_materials(
+    course_id: int | None = None,
+    uncategorized: bool = False,
+    db: Session = Depends(get_db),
+):
     stmt = select(Material).order_by(Material.created_at.desc())
-    if course_id is not None:
+    if uncategorized:
+        stmt = stmt.where(Material.course_id.is_(None))
+    elif course_id is not None:
         stmt = stmt.where(Material.course_id == course_id)
     return db.scalars(stmt).all()
 
@@ -152,6 +158,21 @@ def material_status(material_id: int, db: Session = Depends(get_db)):
             for p in material.pages
         ],
     }
+
+
+@router.put("/{material_id}/move", response_model=schemas.MaterialOut)
+def move_material(
+    material_id: int, payload: schemas.MaterialMoveIn, db: Session = Depends(get_db)
+):
+    material = db.get(Material, material_id)
+    if material is None:
+        raise HTTPException(404, "教材が見つかりません")
+    if payload.course_id is not None and db.get(Course, payload.course_id) is None:
+        raise HTTPException(404, "移動先の科目が見つかりません")
+    material.course_id = payload.course_id
+    db.commit()
+    db.refresh(material)
+    return material
 
 
 @router.delete("/{material_id}")

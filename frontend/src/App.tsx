@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
+import CourseView from "./pages/CourseView";
 import MaterialDetail from "./pages/MaterialDetail";
 import Decks from "./pages/Decks";
 import DeckDetail from "./pages/DeckDetail";
@@ -53,6 +54,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/materials" element={<Materials />} />
+            <Route path="/materials/course/:cid" element={<CourseView />} />
             <Route path="/materials/:id" element={<MaterialDetail />} />
             <Route path="/decks" element={<Decks />} />
             <Route path="/decks/:id" element={<DeckDetail />} />

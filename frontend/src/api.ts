@@ -42,6 +42,7 @@ export interface Course {
   id: number;
   name: string;
   created_at: string;
+  material_count: number;
 }
 export interface Material {
   id: number;

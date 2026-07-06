@@ -38,8 +38,11 @@ export default function MaterialDetail() {
 
   return (
     <div className="space-y-5">
-      <Link to="/materials" className="text-sm text-indigo-600">
-        ← 教材一覧
+      <Link
+        to={`/materials/course/${m.course_id ?? "none"}`}
+        className="text-sm text-indigo-600"
+      >
+        ← フォルダに戻る
       </Link>
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold">{m.title}</h1>

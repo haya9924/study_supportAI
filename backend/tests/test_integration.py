@@ -118,6 +118,36 @@ def test_full_flow(client):
     assert len(user_msgs) == 2
 
 
+def test_course_folders_count_rename_move(client):
+    # 科目フォルダ作成 → 直後は 0 件
+    a = client.post("/api/courses", json={"name": "数学"}).json()
+    b = client.post("/api/courses", json={"name": "物理"}).json()
+    assert a["material_count"] == 0
+
+    # 数学フォルダへアップロード → 件数が反映される
+    mid = _upload_and_wait(client, a["id"])
+    courses = {c["id"]: c for c in client.get("/api/courses").json()}
+    assert courses[a["id"]]["material_count"] == 1
+    assert courses[b["id"]]["material_count"] == 0
+
+    # リネーム
+    renamed = client.put(f"/api/courses/{a['id']}", json={"name": "解析学"}).json()
+    assert renamed["name"] == "解析学"
+    assert renamed["material_count"] == 1
+
+    # 物理フォルダへ移動
+    client.put(f"/api/materials/{mid}/move", json={"course_id": b["id"]})
+    courses = {c["id"]: c for c in client.get("/api/courses").json()}
+    assert courses[a["id"]]["material_count"] == 0
+    assert courses[b["id"]]["material_count"] == 1
+
+    # 未分類へ移動 → uncategorized フィルタで取得できる
+    client.put(f"/api/materials/{mid}/move", json={"course_id": None})
+    uncat = client.get("/api/materials?uncategorized=1").json()
+    assert any(m["id"] == mid for m in uncat)
+    assert client.get(f"/api/materials?course_id={b['id']}").json() == []
+
+
 def test_new_per_day_limit(client):
     """1 日の新規カード上限が守られること。"""
     deck = client.post(

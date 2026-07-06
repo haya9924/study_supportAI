@@ -1,171 +1,146 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, Course, Material } from "../api";
-import { Badge, Button, Card, Empty, Spinner } from "../components/ui";
-
-const KIND_LABEL: Record<string, string> = {
-  lecture: "講義資料",
-  past_exam: "過去問",
-  other: "その他",
-};
+import { Button, Card, Empty } from "../components/ui";
 
 export default function Materials() {
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const nav = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
-  const [courseId, setCourseId] = useState<number | null>(null);
-  const [kind, setKind] = useState("lecture");
+  const [uncategorized, setUncategorized] = useState(0);
   const [newCourse, setNewCourse] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [renaming, setRenaming] = useState<number | null>(null);
+  const [renameVal, setRenameVal] = useState("");
 
   const load = () => {
-    api.get<Material[]>("/api/materials").then(setMaterials);
     api.get<Course[]>("/api/courses").then(setCourses);
+    api
+      .get<Material[]>("/api/materials?uncategorized=1")
+      .then((m) => setUncategorized(m.length));
   };
   useEffect(() => {
     load();
   }, []);
 
-  // 処理中の教材があれば定期更新
-  useEffect(() => {
-    if (!materials.some((m) => m.status === "processing")) return;
-    const t = setInterval(
-      () => api.get<Material[]>("/api/materials").then(setMaterials),
-      2500
-    );
-    return () => clearInterval(t);
-  }, [materials]);
-
   const addCourse = async () => {
     if (!newCourse.trim()) return;
-    const c = await api.post<Course>("/api/courses", { name: newCourse });
+    await api.post("/api/courses", { name: newCourse });
     setNewCourse("");
-    setCourseId(c.id);
     load();
   };
 
-  const upload = async (files: FileList) => {
-    if (files.length === 0) return;
-    setUploading(true);
-    const form = new FormData();
-    for (const f of Array.from(files)) form.append("files", f);
-    if (courseId != null) form.append("course_id", String(courseId));
-    form.append("kind", kind);
-    try {
-      await api.upload("/api/materials", form);
-      load();
-    } catch (e) {
-      alert("アップロード失敗: " + (e as Error).message);
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
+  const saveRename = async (id: number) => {
+    if (renameVal.trim()) await api.put(`/api/courses/${id}`, { name: renameVal });
+    setRenaming(null);
+    load();
   };
 
-  const remove = async (id: number) => {
-    if (!confirm("この教材を削除しますか？")) return;
-    await api.del(`/api/materials/${id}`);
+  const removeCourse = async (id: number) => {
+    if (!confirm("この科目フォルダと中の教材をすべて削除しますか？")) return;
+    await api.del(`/api/courses/${id}`);
     load();
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">教材</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">教材</h1>
+      </div>
 
       <Card>
-        <h2 className="font-semibold mb-3">アップロード</h2>
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">科目</label>
-            <div className="flex gap-2">
-              <select
-                className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                value={courseId ?? ""}
-                onChange={(e) =>
-                  setCourseId(e.target.value ? Number(e.target.value) : null)
-                }
-              >
-                <option value="">未分類</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2 mt-2">
-              <input
-                className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
-                placeholder="新しい科目名"
-                value={newCourse}
-                onChange={(e) => setNewCourse(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addCourse()}
-              />
-              <Button variant="secondary" onClick={addCourse}>
-                追加
-              </Button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">種別</label>
-            <select
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-              value={kind}
-              onChange={(e) => setKind(e.target.value)}
-            >
-              <option value="lecture">講義資料・スライド</option>
-              <option value="past_exam">過去問</option>
-              <option value="other">その他</option>
-            </select>
-          </div>
+        <label className="block text-sm font-medium mb-1">
+          新しい科目フォルダを作成
+        </label>
+        <div className="flex gap-2">
+          <input
+            className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            placeholder="例: 生物学、線形代数…"
+            value={newCourse}
+            onChange={(e) => setNewCourse(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCourse()}
+          />
+          <Button onClick={addCourse}>作成</Button>
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept=".pdf,.png,.jpg,.jpeg,.heic,.heif,.webp"
-          onChange={(e) => e.target.files && upload(e.target.files)}
-          className="block w-full text-sm"
-          disabled={uploading}
-        />
-        <p className="text-xs text-slate-400 mt-2">
-          PDF / JPEG / PNG / HEIC 対応。アップロード後、自動で OCR を実行します。
-        </p>
-        {uploading && (
-          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
-            <Spinner /> アップロード中…
-          </div>
-        )}
       </Card>
 
       <div>
-        <h2 className="font-semibold mb-2">教材一覧</h2>
-        {materials.length === 0 ? (
-          <Empty>まだ教材がありません</Empty>
+        <div className="text-sm text-slate-500 mb-2">
+          フォルダを開いて教材をアップロード・管理します
+        </div>
+        {courses.length === 0 && uncategorized === 0 ? (
+          <Empty>
+            まだフォルダがありません。科目を作成して教材を追加しましょう。
+          </Empty>
         ) : (
-          <div className="space-y-2">
-            {materials.map((m) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {courses.map((c) => (
               <div
-                key={m.id}
-                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3"
+                key={c.id}
+                className="group bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer"
+                onClick={() =>
+                  renaming !== c.id && nav(`/materials/course/${c.id}`)
+                }
               >
-                <Link
-                  to={`/materials/${m.id}`}
-                  className="flex-1 min-w-0 hover:text-indigo-600"
-                >
-                  <div className="truncate font-medium">{m.title}</div>
-                  <div className="text-xs text-slate-400">
-                    {KIND_LABEL[m.kind] || m.kind}
+                <div className="flex items-start justify-between">
+                  <div className="text-3xl">📁</div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      title="名前を変更"
+                      className="text-slate-400 hover:text-slate-700 text-sm px-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenaming(c.id);
+                        setRenameVal(c.name);
+                      }}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      title="削除"
+                      className="text-slate-400 hover:text-red-600 text-sm px-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCourse(c.id);
+                      }}
+                    >
+                      🗑️
+                    </button>
                   </div>
-                </Link>
-                <div className="flex items-center gap-3">
-                  <Badge status={m.status} />
-                  <Button variant="ghost" onClick={() => remove(m.id)}>
-                    削除
-                  </Button>
+                </div>
+                {renaming === c.id ? (
+                  <input
+                    autoFocus
+                    className="mt-2 w-full border border-slate-300 rounded px-2 py-1 text-sm"
+                    value={renameVal}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setRenameVal(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveRename(c.id);
+                      if (e.key === "Escape") setRenaming(null);
+                    }}
+                    onBlur={() => saveRename(c.id)}
+                  />
+                ) : (
+                  <div className="mt-2 font-medium truncate">{c.name}</div>
+                )}
+                <div className="text-xs text-slate-400 mt-0.5">
+                  {c.material_count} 件
                 </div>
               </div>
             ))}
+
+            {/* 未分類フォルダ */}
+            <div
+              className="bg-white border border-slate-200 border-dashed rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer"
+              onClick={() => nav("/materials/course/none")}
+            >
+              <div className="text-3xl">🗂️</div>
+              <div className="mt-2 font-medium truncate text-slate-600">
+                未分類
+              </div>
+              <div className="text-xs text-slate-400 mt-0.5">
+                {uncategorized} 件
+              </div>
+            </div>
           </div>
         )}
       </div>
