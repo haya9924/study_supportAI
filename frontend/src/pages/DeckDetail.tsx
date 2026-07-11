@@ -35,6 +35,7 @@ export default function DeckDetail() {
   };
 
   const removeCard = async (cid: number) => {
+    if (!confirm("このカードを削除しますか？")) return;
     await api.del(`/api/decks/cards/${cid}`);
     load();
   };

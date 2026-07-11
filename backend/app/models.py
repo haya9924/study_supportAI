@@ -185,6 +185,11 @@ class ReviewLog(Base):
     rating: Mapped[int] = mapped_column(Integer)  # 1=Again 2=Hard 3=Good 4=Easy
     was_new: Mapped[bool] = mapped_column(Boolean, default=False)
     reviewed_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+    # 取り消し(1つ戻る)用: 復習直前のカード状態のスナップショット
+    prev_fsrs_state: Mapped[dict] = mapped_column(JSON, default=dict)
+    prev_due: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    prev_reps: Mapped[int] = mapped_column(Integer, default=0)
+    prev_is_new: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class Job(Base):

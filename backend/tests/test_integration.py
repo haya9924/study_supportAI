@@ -161,6 +161,39 @@ def test_new_per_day_limit(client):
     assert stats["new_count"] == 2  # 5 枚あっても上限 2
 
 
+def test_undo_review(client):
+    deck = client.post("/api/decks", json={"name": "取消テスト"}).json()
+    did = deck["id"]
+    client.post(f"/api/decks/{did}/cards", json={"front": "Q", "back": "A"})
+
+    nxt = client.get(f"/api/decks/{did}/next").json()
+    cid = nxt["card"]["id"]
+    assert nxt["card"]["is_new"] is True and nxt["card"]["reps"] == 0
+
+    # 回答するとカードが更新される
+    client.post(f"/api/decks/cards/{cid}/review", json={"rating": 3})
+    after = client.get(f"/api/decks/{did}/cards").json()[0]
+    assert after["reps"] == 1 and after["is_new"] is False
+
+    # 1つ戻る: 復習前の状態に完全復元され、そのカードが現在のカードとして返る
+    undone = client.post(f"/api/decks/{did}/undo").json()
+    assert undone["card"]["id"] == cid
+    assert undone["card"]["reps"] == 0 and undone["card"]["is_new"] is True
+    assert undone["new_remaining"] == 1  # 新規カードの1日枠も戻る
+
+    # 履歴が無くなったので再度の取り消しは 400
+    assert client.post(f"/api/decks/{did}/undo").status_code == 400
+
+
+def test_delete_card(client):
+    deck = client.post("/api/decks", json={"name": "削除テスト"}).json()
+    did = deck["id"]
+    c = client.post(f"/api/decks/{did}/cards", json={"front": "x", "back": "y"}).json()
+    assert len(client.get(f"/api/decks/{did}/cards").json()) == 1
+    client.delete(f"/api/decks/cards/{c['id']}")
+    assert client.get(f"/api/decks/{did}/cards").json() == []
+
+
 def test_deck_rename(client):
     deck = client.post("/api/decks", json={"name": "旧デッキ名"}).json()
     did = deck["id"]

@@ -266,8 +266,11 @@ def review_card(
     card = db.get(Card, card_id)
     if card is None:
         raise HTTPException(404, "カードが見つかりません")
-    deck = db.get(Deck, card.deck_id)
     now = _now()
+    # 取り消し用に復習直前の状態をスナップショット
+    prev_state = card.fsrs_state
+    prev_due = card.due
+    prev_reps = card.reps
     was_new = card.is_new
 
     new_state, due = srs.review(
@@ -284,9 +287,54 @@ def review_card(
             rating=payload.rating,
             was_new=was_new,
             reviewed_at=now,
+            prev_fsrs_state=prev_state,
+            prev_due=prev_due,
+            prev_reps=prev_reps,
+            prev_is_new=was_new,
         )
     )
     db.commit()
 
     # 次のカードを返す (途中再開はサーバー状態から常に再計算されるため自動的に機能)
     return next_card(card.deck_id, db)
+
+
+def _review_card_out(db: Session, deck: Deck, card: Card) -> schemas.ReviewCardOut:
+    _total, due_count, new_available = _deck_counts(db, deck)
+    intervals = srs.preview_intervals(
+        card.fsrs_state, desired_retention=_retention(db)
+    )
+    return schemas.ReviewCardOut(
+        card=schemas.CardOut.model_validate(card),
+        intervals=intervals,
+        remaining=due_count + new_available,
+        new_remaining=new_available,
+    )
+
+
+@router.post("/{deck_id}/undo", response_model=schemas.ReviewCardOut)
+def undo_review(deck_id: int, db: Session = Depends(get_db)):
+    """直近の復習を取り消し、そのカードを復習直前の状態に戻して現在のカードとして返す。"""
+    deck = db.get(Deck, deck_id)
+    if deck is None:
+        raise HTTPException(404, "デッキが見つかりません")
+    log = db.scalar(
+        select(ReviewLog)
+        .where(ReviewLog.deck_id == deck_id)
+        .order_by(ReviewLog.reviewed_at.desc(), ReviewLog.id.desc())
+    )
+    if log is None:
+        raise HTTPException(400, "取り消せる復習履歴がありません")
+    card = db.get(Card, log.card_id)
+    if card is None:
+        db.delete(log)
+        db.commit()
+        raise HTTPException(400, "対象のカードが見つかりません")
+    # スナップショットから復元
+    card.fsrs_state = log.prev_fsrs_state or {}
+    card.due = log.prev_due or _now()
+    card.reps = log.prev_reps or 0
+    card.is_new = bool(log.prev_is_new)
+    db.delete(log)
+    db.commit()
+    return _review_card_out(db, deck, card)

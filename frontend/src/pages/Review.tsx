@@ -17,6 +17,8 @@ export default function Review() {
   const [state, setState] = useState<ReviewCard | null>(null);
   const [flipped, setFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  // このセッションで回答した枚数 (1つ戻るの可否判定に使う)
+  const [reviewedCount, setReviewedCount] = useState(0);
   const busy = useRef(false);
 
   const load = useCallback(() => {
@@ -43,6 +45,7 @@ export default function Review() {
         );
         setState(next);
         setFlipped(false);
+        setReviewedCount((n) => n + 1);
       } finally {
         setLoading(false);
         busy.current = false;
@@ -51,11 +54,51 @@ export default function Review() {
     [state]
   );
 
-  // PC のキーボード操作: 表面 Space/Enter でめくる、裏面 1〜4 で回答
+  // 1つ戻る: 直前の回答を取り消し、そのカードを再表示して回答し直す
+  const undo = useCallback(async () => {
+    if (busy.current || reviewedCount <= 0) return;
+    busy.current = true;
+    setLoading(true);
+    try {
+      const res = await api.post<ReviewCard>(`/api/decks/${deckId}/undo`);
+      setState(res);
+      setFlipped(false);
+      setReviewedCount((n) => Math.max(0, n - 1));
+    } catch {
+      /* 取り消せる履歴がない場合など: 何もしない */
+    } finally {
+      setLoading(false);
+      busy.current = false;
+    }
+  }, [deckId, reviewedCount]);
+
+  // 現在のカードを削除して次へ
+  const removeCurrent = useCallback(async () => {
+    if (!state?.card || busy.current) return;
+    if (!confirm("このカードを削除しますか？（元に戻せません）")) return;
+    busy.current = true;
+    setLoading(true);
+    try {
+      await api.del(`/api/decks/cards/${state.card.id}`);
+      const res = await api.get<ReviewCard>(`/api/decks/${deckId}/next`);
+      setState(res);
+      setFlipped(false);
+    } finally {
+      setLoading(false);
+      busy.current = false;
+    }
+  }, [state, deckId]);
+
+  // PC のキーボード操作
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return;
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        undo();
+        return;
+      }
       if (!state?.card) return;
       if (!flipped) {
         if (e.code === "Space" || e.key === "Enter") {
@@ -72,7 +115,7 @@ export default function Review() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [flipped, state, rate]);
+  }, [flipped, state, rate, undo]);
 
   if (loading && !state) return <Spinner />;
 
@@ -86,6 +129,13 @@ export default function Review() {
           🎉 今日の学習は完了です！<br />
           期限が来たカードはまた表示されます。
         </Empty>
+        {reviewedCount > 0 && (
+          <div className="text-center">
+            <Button variant="secondary" onClick={undo}>
+              ↩ 直前の回答を修正する
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
@@ -98,9 +148,27 @@ export default function Review() {
         <Link to="/decks" className="text-sm text-indigo-600 dark:text-indigo-400">
           ← 中断して戻る
         </Link>
-        <span className="text-sm text-slate-500 dark:text-slate-400">
-          残り {state.remaining} 枚
-        </span>
+        <div className="flex items-center gap-3 text-sm">
+          <button
+            onClick={undo}
+            disabled={reviewedCount <= 0 || loading}
+            title="直前の回答を取り消して修正 (Backspace)"
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            ↩ 1つ戻る
+          </button>
+          <button
+            onClick={removeCurrent}
+            disabled={loading}
+            title="このカードを削除"
+            className="text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 disabled:opacity-40"
+          >
+            🗑 削除
+          </button>
+          <span className="text-slate-500 dark:text-slate-400">
+            残り {state.remaining} 枚
+          </span>
+        </div>
       </div>
 
       <div
@@ -159,7 +227,7 @@ export default function Review() {
           </span>
         )}
         <span className="hidden sm:inline">
-          キーボード: Space で答えを表示 / 1〜4 で回答
+          キーボード: Space で答えを表示 / 1〜4 で回答 / Backspace で1つ戻る
         </span>
       </div>
     </div>
