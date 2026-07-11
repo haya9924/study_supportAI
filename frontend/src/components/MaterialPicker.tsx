@@ -61,7 +61,7 @@ export function MaterialPicker({
         <label className="block text-sm font-medium mb-1">
           教材を選択（未選択なら科目内すべて）
         </label>
-        <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-lg divide-y">
+        <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-lg divide-y dark:border-slate-700 dark:divide-slate-700">
           {ready.length === 0 && (
             <div className="text-slate-400 text-sm px-3 py-4">
               文字起こし完了済みの教材がありません
@@ -70,7 +70,7 @@ export function MaterialPicker({
           {ready.map((m) => (
             <label
               key={m.id}
-              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50"
+              className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700"
             >
               <input
                 type="checkbox"

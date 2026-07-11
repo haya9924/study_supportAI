@@ -15,7 +15,11 @@ export default function Dashboard() {
   const stats = [
     { label: "今日の復習", value: data.due_today, accent: "text-indigo-600" },
     { label: "新規カード", value: data.new_cards, accent: "text-emerald-600" },
-    { label: "本日学習済", value: data.reviewed_today, accent: "text-slate-700" },
+    {
+      label: "本日学習済",
+      value: data.reviewed_today,
+      accent: "text-slate-700 dark:text-slate-200",
+    },
   ];
 
   return (
@@ -25,18 +29,20 @@ export default function Dashboard() {
       <div className="grid grid-cols-3 gap-4">
         {stats.map((s) => (
           <Card key={s.label}>
-            <div className="text-sm text-slate-500">{s.label}</div>
+            <div className="text-sm text-slate-500 dark:text-slate-400">
+            {s.label}
+          </div>
             <div className={`text-3xl font-bold mt-1 ${s.accent}`}>{s.value}</div>
           </Card>
         ))}
       </div>
 
       {(data.due_today > 0 || data.new_cards > 0) && (
-        <Card className="bg-indigo-50 border-indigo-200">
+        <Card className="bg-indigo-50 border-indigo-200 dark:bg-indigo-950 dark:border-indigo-900">
           <div className="flex items-center justify-between">
             <div>
               <div className="font-semibold">復習の時間です</div>
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-slate-600 dark:text-slate-300">
                 期限到来 {data.due_today} 枚・新規 {data.new_cards} 枚
               </div>
             </div>
@@ -59,7 +65,9 @@ export default function Dashboard() {
         ].map((c) => (
           <Card key={c.label} className="text-center">
             <div className="text-2xl font-bold">{c.value}</div>
-            <div className="text-xs text-slate-500">{c.label}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              {c.label}
+            </div>
           </Card>
         ))}
       </div>
@@ -74,7 +82,7 @@ export default function Dashboard() {
               <Link
                 key={m.id}
                 to={`/materials/${m.id}`}
-                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 hover:bg-slate-50"
+                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700"
               >
                 <span className="truncate">{m.title}</span>
                 <Badge status={m.status} />

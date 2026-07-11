@@ -75,7 +75,7 @@ export default function Materials() {
             {courses.map((c) => (
               <div
                 key={c.id}
-                className="group bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer"
+                className="group bg-white border border-slate-200 rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:hover:border-indigo-500"
                 onClick={() =>
                   renaming !== c.id && nav(`/materials/course/${c.id}`)
                 }
@@ -130,7 +130,7 @@ export default function Materials() {
 
             {/* 未分類フォルダ */}
             <div
-              className="bg-white border border-slate-200 border-dashed rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer"
+              className="bg-white border border-slate-200 border-dashed rounded-xl p-4 hover:border-indigo-300 hover:shadow-sm transition cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:hover:border-indigo-500"
               onClick={() => nav("/materials/course/none")}
             >
               <div className="text-3xl">🗂️</div>

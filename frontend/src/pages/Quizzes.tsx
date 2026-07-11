@@ -86,7 +86,7 @@ export default function Quizzes() {
             {quizzes.map((q) => (
               <div
                 key={q.id}
-                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3"
+                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 dark:bg-slate-800 dark:border-slate-700"
               >
                 <Link
                   to={`/quizzes/${q.id}`}

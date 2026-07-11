@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
+import { useTheme } from "./lib/theme";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
 import CourseView from "./pages/CourseView";
@@ -22,14 +23,17 @@ const nav = [
 ];
 
 export default function App() {
+  const [isDark, toggleTheme] = useTheme();
   return (
     <div className="min-h-screen flex">
-      <aside className="w-56 bg-white border-r border-slate-200 flex-shrink-0 no-print">
-        <div className="p-5 border-b border-slate-100">
-          <div className="font-bold text-lg text-indigo-700">study_supportAI</div>
+      <aside className="w-56 bg-white border-r border-slate-200 flex-shrink-0 no-print flex flex-col dark:bg-slate-800 dark:border-slate-700">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-700">
+          <div className="font-bold text-lg text-indigo-700 dark:text-indigo-400">
+            study_supportAI
+          </div>
           <div className="text-xs text-slate-400">学習支援</div>
         </div>
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 flex-1">
           {nav.map((n) => (
             <NavLink
               key={n.to}
@@ -38,8 +42,8 @@ export default function App() {
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                   isActive
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
                 }`
               }
             >
@@ -48,6 +52,16 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+        <div className="p-3 border-t border-slate-100 dark:border-slate-700">
+          <button
+            onClick={toggleTheme}
+            title="テーマを切り替え"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition dark:text-slate-300 dark:hover:bg-slate-700"
+          >
+            <span>{isDark ? "🌞" : "🌙"}</span>
+            {isDark ? "ライトモード" : "ダークモード"}
+          </button>
+        </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto p-6">

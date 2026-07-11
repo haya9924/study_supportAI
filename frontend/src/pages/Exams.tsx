@@ -78,7 +78,7 @@ export default function Exams() {
             {exams.map((e) => (
               <div
                 key={e.id}
-                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3"
+                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 dark:bg-slate-800 dark:border-slate-700"
               >
                 <Link
                   to={`/exams/${e.id}`}

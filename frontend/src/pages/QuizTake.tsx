@@ -162,8 +162,8 @@ export default function QuizTake() {
           <div
             className={`mt-4 rounded-lg p-3 text-sm ${
               feedback.correct
-                ? "bg-emerald-50 text-emerald-800"
-                : "bg-red-50 text-red-800"
+                ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+                : "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200"
             }`}
           >
             <div className="font-medium">
@@ -220,8 +220,8 @@ function QuestionInput({
             key={i}
             className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer ${
               value === String(i)
-                ? "border-indigo-500 bg-indigo-50"
-                : "border-slate-200 hover:bg-slate-50"
+                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950"
+                : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
             }`}
           >
             <input
@@ -247,8 +247,8 @@ function QuestionInput({
             key={o.v}
             className={`flex-1 flex items-center justify-center gap-2 border rounded-lg px-3 py-3 text-sm cursor-pointer ${
               value === o.v
-                ? "border-indigo-500 bg-indigo-50"
-                : "border-slate-200 hover:bg-slate-50"
+                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950"
+                : "border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
             }`}
           >
             <input

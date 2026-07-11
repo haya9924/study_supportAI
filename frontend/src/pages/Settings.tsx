@@ -58,7 +58,7 @@ export default function Settings() {
       <h1 className="text-2xl font-bold">設定</h1>
 
       {s.llm_mock && (
-        <Card className="bg-amber-50 border-amber-200 text-sm text-amber-800">
+        <Card className="bg-amber-50 border-amber-200 text-sm text-amber-800 dark:bg-amber-950 dark:border-amber-900 dark:text-amber-200">
           現在 <b>モックモード</b>（LLM_MOCK=1）で動作中です。外部 API には接続せず
           ダミー応答を返します。
         </Card>

@@ -127,8 +127,8 @@ export default function CourseView() {
           }}
           className={`border-2 border-dashed rounded-xl p-6 text-center transition ${
             dragOver
-              ? "border-indigo-400 bg-indigo-50"
-              : "border-slate-300 bg-slate-50"
+              ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950"
+              : "border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800"
           }`}
         >
           <div className="text-slate-500 text-sm mb-3">
@@ -159,7 +159,7 @@ export default function CourseView() {
             {picked.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm dark:bg-slate-800 dark:border-slate-700"
               >
                 <span className="truncate">📄 {f.name}</span>
                 <button
@@ -193,7 +193,7 @@ export default function CourseView() {
             {materials.map((m) => (
               <div
                 key={m.id}
-                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3"
+                className="flex items-center justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 dark:bg-slate-800 dark:border-slate-700"
               >
                 <Link
                   to={`/materials/${m.id}`}

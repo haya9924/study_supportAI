@@ -122,7 +122,7 @@ export default function DeckDetail() {
             {drafts.map((d, i) => (
               <label
                 key={i}
-                className="flex gap-3 items-start border border-slate-200 rounded-lg p-3 cursor-pointer hover:bg-slate-50"
+                className="flex gap-3 items-start border border-slate-200 rounded-lg p-3 cursor-pointer hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
               >
                 <input
                   type="checkbox"
@@ -173,7 +173,7 @@ export default function DeckDetail() {
             {cards.map((c) => (
               <div
                 key={c.id}
-                className="flex items-start justify-between bg-white border border-slate-200 rounded-lg px-4 py-3"
+                className="flex items-start justify-between bg-white border border-slate-200 rounded-lg px-4 py-3 dark:bg-slate-800 dark:border-slate-700"
               >
                 <div className="text-sm min-w-0">
                   <div className="font-medium truncate">{c.front}</div>
