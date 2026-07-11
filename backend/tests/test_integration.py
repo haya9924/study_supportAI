@@ -159,3 +159,22 @@ def test_new_per_day_limit(client):
 
     stats = [d for d in client.get("/api/decks").json() if d["id"] == did][0]
     assert stats["new_count"] == 2  # 5 枚あっても上限 2
+
+
+def test_deck_rename(client):
+    deck = client.post("/api/decks", json={"name": "旧デッキ名"}).json()
+    did = deck["id"]
+
+    updated = client.put(f"/api/decks/{did}", json={"name": "新デッキ名"}).json()
+    assert updated["name"] == "新デッキ名"
+
+    # 一覧にも反映される
+    decks = {d["id"]: d for d in client.get("/api/decks").json()}
+    assert decks[did]["name"] == "新デッキ名"
+
+    # 空白のみは無視して既存名を維持
+    same = client.put(f"/api/decks/{did}", json={"name": "   "}).json()
+    assert same["name"] == "新デッキ名"
+
+    # 存在しないデッキは 404
+    assert client.put("/api/decks/999999", json={"name": "x"}).status_code == 404

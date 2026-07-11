@@ -107,6 +107,22 @@ def create_deck(payload: schemas.DeckIn, db: Session = Depends(get_db)):
     return deck
 
 
+@router.put("/{deck_id}", response_model=schemas.DeckOut)
+def update_deck(
+    deck_id: int, payload: schemas.DeckUpdateIn, db: Session = Depends(get_db)
+):
+    deck = db.get(Deck, deck_id)
+    if deck is None:
+        raise HTTPException(404, "デッキが見つかりません")
+    if payload.name is not None and payload.name.strip():
+        deck.name = payload.name.strip()
+    if payload.new_per_day is not None:
+        deck.new_per_day = payload.new_per_day
+    db.commit()
+    db.refresh(deck)
+    return deck
+
+
 @router.delete("/{deck_id}")
 def delete_deck(deck_id: int, db: Session = Depends(get_db)):
     deck = db.get(Deck, deck_id)

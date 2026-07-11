@@ -92,6 +92,11 @@ class DeckIn(BaseModel):
     new_per_day: int = 20
 
 
+class DeckUpdateIn(BaseModel):
+    name: str | None = None
+    new_per_day: int | None = None
+
+
 class DeckOut(ORMModel):
     id: int
     name: str
