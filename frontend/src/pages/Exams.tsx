@@ -1,37 +1,47 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api, Exam } from "../api";
-import { Button, Card, Empty, Spinner } from "../components/ui";
+import { Button, Card, Empty } from "../components/ui";
 import { MaterialPicker, Selection } from "../components/MaterialPicker";
+import { useTasks } from "../tasks";
 
 export default function Exams() {
-  const nav = useNavigate();
+  const { start, tasks } = useTasks();
   const [exams, setExams] = useState<Exam[]>([]);
   const [sel, setSel] = useState<Selection>({ courseId: null, materialIds: [] });
   const [title, setTitle] = useState("");
   const [instruction, setInstruction] = useState("");
-  const [busy, setBusy] = useState(false);
 
   const load = () => api.get<Exam[]>("/api/exams").then(setExams);
   useEffect(() => {
     load();
   }, []);
 
-  const create = async () => {
-    setBusy(true);
-    try {
-      const e = await api.post<Exam>("/api/exams", {
-        course_id: sel.courseId,
-        material_ids: sel.materialIds,
-        instruction,
-        title: title || "予想問題",
-      });
-      nav(`/exams/${e.id}`);
-    } catch (err) {
-      alert("生成失敗: " + (err as Error).message);
-    } finally {
-      setBusy(false);
-    }
+  // 生成タスクが完了したら一覧を更新
+  useEffect(() => {
+    if (tasks.some((t) => t.kind === "exam" && t.status === "done")) load();
+  }, [tasks]);
+
+  const create = () => {
+    const displayTitle = title || "予想問題";
+    start({
+      kind: "exam",
+      label: `予想問題「${displayTitle}」を作成中…`,
+      run: async () => {
+        const e = await api.post<Exam>("/api/exams", {
+          course_id: sel.courseId,
+          material_ids: sel.materialIds,
+          instruction,
+          title: displayTitle,
+        });
+        return {
+          result: e,
+          link: `/exams/${e.id}`,
+          linkLabel: "開く",
+          doneLabel: `予想問題「${e.title}」ができました`,
+        };
+      },
+    });
   };
 
   const remove = async (id: number) => {
@@ -62,10 +72,10 @@ export default function Exams() {
           />
         </div>
         <div className="mt-3 flex items-center gap-3">
-          <Button onClick={create} disabled={busy}>
-            {busy ? "生成中…" : "生成する"}
-          </Button>
-          {busy && <Spinner />}
+          <Button onClick={create}>生成する</Button>
+          <span className="text-xs text-slate-400">
+            生成は裏で実行され、他の画面に移動できます
+          </span>
         </div>
       </Card>
 

@@ -69,6 +69,26 @@ def _mock_response(messages: list[dict], want_json: bool) -> str:
         if isinstance(part, dict)
     ).lower()
 
+    if "追加質問" in text or "チューター" in text:
+        return "ご質問ありがとうございます。この問題のポイントは、定義を正確に押さえることです。(モック回答)"
+    if "予想問題" in text or '"problem"' in text:
+        return json.dumps(
+            {
+                "questions": [
+                    {
+                        "problem": "水の化学式を答えよ。",
+                        "answer": "H2O",
+                        "explanation": "水は水素2原子と酸素1原子から成る。",
+                    },
+                    {
+                        "problem": "光合成が行われる細胞小器官を答えよ。",
+                        "answer": "葉緑体",
+                        "explanation": "光合成は葉緑体のチラコイドで行われる。",
+                    },
+                ]
+            },
+            ensure_ascii=False,
+        )
     if "flashcard" in text or "フラッシュカード" in text or '"front"' in text:
         return json.dumps(
             {
@@ -111,11 +131,6 @@ def _mock_response(messages: list[dict], want_json: bool) -> str:
     if "grade" in text or "採点" in text or "judge" in text:
         return json.dumps(
             {"correct": True, "feedback": "正解です。"}, ensure_ascii=False
-        )
-    if "予想問題" in text or "exam" in text:
-        return (
-            "# 予想問題\n\n## 問1\n水の化学式を答えよ。\n\n"
-            "**解答:** H2O — 水素2原子と酸素1原子。\n"
         )
     # OCR (画像あり) など: markdown テキスト
     return "# サンプル講義ノート\n\n光合成は葉緑体で行われ、水 (H2O) と二酸化炭素から酸素を生成する。"

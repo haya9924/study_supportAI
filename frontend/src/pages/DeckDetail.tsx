@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, Card as CardType, CardDraft } from "../api";
-import { Button, Card, Empty, Spinner } from "../components/ui";
+import { Button, Card, Empty } from "../components/ui";
 import { MaterialPicker, Selection } from "../components/MaterialPicker";
+import { useTasks } from "../tasks";
 
 export default function DeckDetail() {
   const { id } = useParams();
   const deckId = Number(id);
+  const { start, tasks, dismiss } = useTasks();
   const [cards, setCards] = useState<CardType[]>([]);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
@@ -17,7 +19,14 @@ export default function DeckDetail() {
   const [count, setCount] = useState(15);
   const [drafts, setDrafts] = useState<CardDraft[] | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
-  const [generating, setGenerating] = useState(false);
+
+  // このデッキ宛ての生成タスクが走っているか
+  const generating = tasks.some(
+    (t) =>
+      t.kind === "flashcards" &&
+      t.status === "running" &&
+      t.meta?.deckId === deckId
+  );
 
   const load = useCallback(() => {
     api.get<CardType[]>(`/api/decks/${deckId}/cards`).then(setCards);
@@ -25,6 +34,22 @@ export default function DeckDetail() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // このデッキ宛ての生成タスクが完了したら候補を取り込む
+  useEffect(() => {
+    const done = tasks.find(
+      (t) =>
+        t.kind === "flashcards" &&
+        t.status === "done" &&
+        t.meta?.deckId === deckId
+    );
+    if (done) {
+      const d = (done.result as { drafts: CardDraft[] }).drafts;
+      setDrafts(d);
+      setPicked(new Set(d.map((_, i) => i)));
+      dismiss(done.id);
+    }
+  }, [tasks, deckId, dismiss]);
 
   const addManual = async () => {
     if (!front.trim() || !back.trim()) return;
@@ -40,23 +65,28 @@ export default function DeckDetail() {
     load();
   };
 
-  const generate = async () => {
-    setGenerating(true);
+  const generate = () => {
     setDrafts(null);
-    try {
-      const res = await api.post<CardDraft[]>("/api/generate/flashcards", {
-        course_id: sel.courseId,
-        material_ids: sel.materialIds,
-        instruction,
-        count,
-      });
-      setDrafts(res);
-      setPicked(new Set(res.map((_, i) => i)));
-    } catch (e) {
-      alert("生成失敗: " + (e as Error).message);
-    } finally {
-      setGenerating(false);
-    }
+    start({
+      kind: "flashcards",
+      label: "カード候補を作成中…",
+      meta: { deckId },
+      run: async () => {
+        const res = await api.post<CardDraft[]>("/api/generate/flashcards", {
+          course_id: sel.courseId,
+          material_ids: sel.materialIds,
+          instruction,
+          count,
+        });
+        return {
+          result: { deckId, drafts: res },
+          link: `/decks/${deckId}`,
+          linkLabel: "確認",
+          doneLabel: `カード候補が ${res.length} 件できました`,
+          keepOnClick: true, // デッキ画面側で取り込む
+        };
+      },
+    });
   };
 
   const saveDrafts = async () => {
@@ -103,15 +133,18 @@ export default function DeckDetail() {
             />
           </div>
         </div>
-        <div className="mt-3">
+        <div className="mt-3 flex items-center gap-3">
           <Button onClick={generate} disabled={generating}>
             {generating ? "生成中…" : "生成する"}
           </Button>
+          <span className="text-xs text-slate-400">
+            生成は裏で実行され、他の画面に移動できます
+          </span>
         </div>
 
         {generating && (
-          <div className="flex items-center gap-2 mt-3 text-sm text-slate-500">
-            <Spinner /> LLM が作成しています…
+          <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+            バックグラウンドで作成中です。完了すると候補がここに表示されます。
           </div>
         )}
 

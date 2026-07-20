@@ -211,3 +211,38 @@ def test_deck_rename(client):
 
     # 存在しないデッキは 404
     assert client.put("/api/decks/999999", json={"name": "x"}).status_code == 404
+
+
+def test_exam_structured_and_followup(client):
+    course = client.post("/api/courses", json={"name": "化学"}).json()
+    mid = _upload_and_wait(client, course["id"])
+
+    exam = client.post(
+        "/api/exams", json={"material_ids": [mid], "title": "予想"}
+    ).json()
+    # 構造化された設問 (問題/解答/解説) が返る
+    assert exam["questions"] and len(exam["questions"]) >= 1
+    q0 = exam["questions"][0]
+    assert q0["problem"] and q0["answer"] and q0["explanation"]
+    assert q0["followups"] == []
+    # 印刷用の content_md も維持
+    assert exam["content_md"]
+
+    # 追加質問 → その設問の followups に user/assistant が追記される
+    updated = client.post(
+        f"/api/exams/{exam['id']}/questions/0/ask", json={"question": "なぜですか？"}
+    ).json()
+    fu = updated["questions"][0]["followups"]
+    assert len(fu) == 2
+    assert fu[0]["role"] == "user" and fu[0]["content"] == "なぜですか？"
+    assert fu[1]["role"] == "assistant" and fu[1]["content"]
+    # 他の設問には影響しない
+    assert updated["questions"][1]["followups"] == []
+
+    # 範囲外の設問は 404
+    assert (
+        client.post(
+            f"/api/exams/{exam['id']}/questions/99/ask", json={"question": "x"}
+        ).status_code
+        == 404
+    )

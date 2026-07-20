@@ -124,11 +124,22 @@ export interface AnswerRecord {
   correct_answer: string;
   type: string;
 }
+export interface ExamFollowup {
+  role: string;
+  content: string;
+}
+export interface ExamQuestion {
+  problem: string;
+  answer: string;
+  explanation: string;
+  followups: ExamFollowup[];
+}
 export interface Exam {
   id: number;
   course_id: number | null;
   title: string;
   content_md: string;
+  questions: ExamQuestion[] | null;
   messages: { role: string; content: string }[];
   created_at: string;
 }

@@ -187,9 +187,14 @@ class ExamOut(ORMModel):
     course_id: int | None
     title: str
     content_md: str
+    questions: list | None = None  # [{problem, answer, explanation, followups}]
     messages: list
     created_at: datetime
 
 
 class ExamReviseIn(BaseModel):
     instruction: str
+
+
+class ExamAskIn(BaseModel):
+    question: str

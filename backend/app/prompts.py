@@ -90,12 +90,16 @@ def grade_short_messages(question: str, model_answer: str, user_answer: str) -> 
 
 
 def exam_messages(history: list[dict], context: str, budget: int) -> list[dict]:
-    """予想問題の生成/改訂。history は過去の指示 (role/content)。"""
+    """予想問題(JSON構造化)の生成/改訂。history は過去の指示 (role/content)。"""
     system = (
-        "あなたは大学の試験問題を作成する専門家です。"
+        "あなたは大学の試験の予想問題を作成する専門家です。"
         "提供された過去問や講義資料の傾向を踏まえ、本番を想定した予想問題を作成します。"
-        "出力は Markdown。各問のあとに模範解答と簡単な解説を付けます。"
-        "数式は LaTeX で記述します。"
+        "各設問について、問題文・模範解答・解説を分けて出力してください。"
+        "数式は LaTeX ($...$) で記述します。"
+        "出力は JSON のみ: "
+        '{"questions": [{"problem": "問題文(Markdown)", '
+        '"answer": "模範解答(Markdown)", "explanation": "解説(Markdown)"}]} 。'
+        "problem には解答や解説を含めないでください。"
     )
     ctx = _context_block(context, budget)
     messages = [{"role": "system", "content": system}]
@@ -112,4 +116,28 @@ def exam_messages(history: list[dict], context: str, budget: int) -> list[dict]:
             first = False
         else:
             messages.append({"role": h["role"], "content": h["content"]})
+    return messages
+
+
+def exam_followup_messages(
+    question: dict, history: list[dict], user_question: str
+) -> list[dict]:
+    """予想問題の特定の設問に対する学習者の追加質問に答える。"""
+    system = (
+        "あなたは学習者を助けるチューターです。"
+        "以下の問題・模範解答・解説を踏まえ、学習者の追加質問に日本語で分かりやすく答えます。"
+        "数式は LaTeX ($...$) で記述します。"
+    )
+    ctx = (
+        f"問題:\n{question.get('problem', '')}\n\n"
+        f"模範解答:\n{question.get('answer', '')}\n\n"
+        f"解説:\n{question.get('explanation', '')}"
+    )
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": ctx},
+    ]
+    for f in history:
+        messages.append({"role": f["role"], "content": f["content"]})
+    messages.append({"role": "user", "content": user_question})
     return messages

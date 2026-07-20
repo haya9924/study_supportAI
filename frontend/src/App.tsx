@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { useTheme } from "./lib/theme";
+import { TasksPopup } from "./tasks";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
 import CourseView from "./pages/CourseView";
@@ -81,6 +82,7 @@ export default function App() {
           </Routes>
         </div>
       </main>
+      <TasksPopup />
     </div>
   );
 }

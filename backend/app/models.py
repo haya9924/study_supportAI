@@ -84,7 +84,9 @@ class ExamDoc(Base):
         ForeignKey("courses.id", ondelete="SET NULL")
     )
     title: Mapped[str] = mapped_column(String, default="")
-    content_md: Mapped[str] = mapped_column(Text, default="")
+    content_md: Mapped[str] = mapped_column(Text, default="")  # 印刷/後方互換用
+    # 構造化された設問: [{problem, answer, explanation, followups: [{role, content}]}]
+    questions: Mapped[list] = mapped_column(JSON, default=list)
     messages: Mapped[list] = mapped_column(JSON, default=list)  # 生成/改訂の履歴
     source_material_ids: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
