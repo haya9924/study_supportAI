@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, Card as CardType, CardDraft } from "../api";
+import { api, Card as CardType, CardDraft, DeckStats } from "../api";
 import { Button, Card, Empty } from "../components/ui";
 import { MaterialPicker, Selection } from "../components/MaterialPicker";
 import { useTasks } from "../tasks";
@@ -12,6 +12,13 @@ export default function DeckDetail() {
   const [cards, setCards] = useState<CardType[]>([]);
   const [front, setFront] = useState("");
   const [back, setBack] = useState("");
+
+  // 出題枚数(デッキ設定)
+  const [deck, setDeck] = useState<DeckStats | null>(null);
+  const [defaultNpd, setDefaultNpd] = useState(20);
+  const [npdMode, setNpdMode] = useState<"default" | "custom">("default");
+  const [npdValue, setNpdValue] = useState(20);
+  const [savedNpd, setSavedNpd] = useState(false);
 
   // 生成
   const [sel, setSel] = useState<Selection>({ courseId: null, materialIds: [] });
@@ -31,9 +38,30 @@ export default function DeckDetail() {
   const load = useCallback(() => {
     api.get<CardType[]>(`/api/decks/${deckId}/cards`).then(setCards);
   }, [deckId]);
+
+  const loadDeck = useCallback(() => {
+    api.get<DeckStats>(`/api/decks/${deckId}`).then((d) => {
+      setDeck(d);
+      setNpdMode(d.new_per_day === 0 ? "default" : "custom");
+      setNpdValue(d.new_per_day === 0 ? d.effective_new_per_day : d.new_per_day);
+    });
+    api
+      .get<{ new_per_day: string }>("/api/settings")
+      .then((s) => setDefaultNpd(Number(s.new_per_day) || 20));
+  }, [deckId]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadDeck();
+  }, [load, loadDeck]);
+
+  const saveNpd = async () => {
+    const value = npdMode === "default" ? 0 : Math.max(1, npdValue);
+    await api.put(`/api/decks/${deckId}`, { new_per_day: value });
+    setSavedNpd(true);
+    setTimeout(() => setSavedNpd(false), 2000);
+    loadDeck();
+  };
 
   // このデッキ宛ての生成タスクが完了したら候補を取り込む
   useEffect(() => {
@@ -106,9 +134,58 @@ export default function DeckDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/decks" className="text-sm text-indigo-600">
+      <Link to="/decks" className="text-sm text-indigo-600 dark:text-indigo-400">
         ← フラッシュカード
       </Link>
+
+      {deck && <h1 className="text-2xl font-bold">{deck.name}</h1>}
+
+      <Card>
+        <h2 className="font-semibold mb-3">出題設定</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+          1日に出題する新規カードの枚数です。
+        </p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={npdMode === "default"}
+              onChange={() => setNpdMode("default")}
+            />
+            デフォルトに従う（現在 {defaultNpd} 枚）
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={npdMode === "custom"}
+              onChange={() => setNpdMode("custom")}
+            />
+            このデッキだけ個別に設定
+            <input
+              type="number"
+              min={1}
+              className="w-20 border border-slate-300 rounded-lg px-2 py-1 text-sm ml-1"
+              value={npdValue}
+              onChange={(e) => setNpdValue(Number(e.target.value))}
+              onFocus={() => setNpdMode("custom")}
+            />
+            枚
+          </label>
+        </div>
+        <div className="mt-3 flex items-center gap-3">
+          <Button onClick={saveNpd}>保存</Button>
+          {savedNpd && (
+            <span className="text-sm text-emerald-600 dark:text-emerald-400">
+              保存しました
+            </span>
+          )}
+          {deck && (
+            <span className="text-xs text-slate-400">
+              現在の適用値: {deck.effective_new_per_day} 枚
+            </span>
+          )}
+        </div>
+      </Card>
 
       <Card>
         <h2 className="font-semibold mb-3">教材からカードを生成</h2>

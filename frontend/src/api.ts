@@ -68,11 +68,12 @@ export interface DeckStats {
   id: number;
   name: string;
   course_id: number | null;
-  new_per_day: number;
+  new_per_day: number; // 0 = デフォルトに従う
   created_at: string;
   total: number;
   due_count: number;
   new_count: number;
+  effective_new_per_day: number;
 }
 export interface Card {
   id: number;

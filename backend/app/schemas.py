@@ -89,12 +89,12 @@ class GenerateIn(BaseModel):
 class DeckIn(BaseModel):
     name: str
     course_id: int | None = None
-    new_per_day: int = 20
+    new_per_day: int = 0  # 0 = デフォルトに従う
 
 
 class DeckUpdateIn(BaseModel):
     name: str | None = None
-    new_per_day: int | None = None
+    new_per_day: int | None = None  # 0 = デフォルトに従う
 
 
 class DeckOut(ORMModel):
@@ -109,6 +109,7 @@ class DeckStats(DeckOut):
     total: int
     due_count: int
     new_count: int
+    effective_new_per_day: int  # 実際に適用される1日の出題枚数
 
 
 class CardIn(BaseModel):

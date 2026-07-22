@@ -25,6 +25,21 @@ def _retention(db: Session) -> float:
         return 0.9
 
 
+def _default_new_per_day(db: Session) -> int:
+    """全デッキ共通のデフォルト出題枚数 (設定画面/フラッシュカード画面で変更)。"""
+    try:
+        return max(0, int(llm.get_setting(db, "new_per_day")))
+    except ValueError:
+        return 20
+
+
+def _effective_new_per_day(db: Session, deck: Deck) -> int:
+    """デッキの実効出題枚数。deck.new_per_day が 0 以下ならデフォルトに従う。"""
+    if deck.new_per_day and deck.new_per_day > 0:
+        return deck.new_per_day
+    return _default_new_per_day(db)
+
+
 def _new_studied_today(db: Session, deck_id: int) -> int:
     """本日(UTC)この デッキで学習した新規カード数。"""
     start = _now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -67,31 +82,40 @@ def _deck_counts(db: Session, deck: Deck) -> tuple[int, int, int]:
         )
         or 0
     )
+    limit = _effective_new_per_day(db, deck)
     new_available = max(
-        0, min(new_total, deck.new_per_day - _new_studied_today(db, deck.id))
+        0, min(new_total, limit - _new_studied_today(db, deck.id))
     )
     return total, due_count, new_available
+
+
+def _build_deck_stats(db: Session, deck: Deck) -> schemas.DeckStats:
+    total, due, new_av = _deck_counts(db, deck)
+    return schemas.DeckStats(
+        id=deck.id,
+        name=deck.name,
+        course_id=deck.course_id,
+        new_per_day=deck.new_per_day,
+        created_at=deck.created_at,
+        total=total,
+        due_count=due,
+        new_count=new_av,
+        effective_new_per_day=_effective_new_per_day(db, deck),
+    )
 
 
 @router.get("", response_model=list[schemas.DeckStats])
 def list_decks(db: Session = Depends(get_db)):
     decks = db.scalars(select(Deck).order_by(Deck.created_at.desc())).all()
-    out = []
-    for d in decks:
-        total, due, new_av = _deck_counts(db, d)
-        out.append(
-            schemas.DeckStats(
-                id=d.id,
-                name=d.name,
-                course_id=d.course_id,
-                new_per_day=d.new_per_day,
-                created_at=d.created_at,
-                total=total,
-                due_count=due,
-                new_count=new_av,
-            )
-        )
-    return out
+    return [_build_deck_stats(db, d) for d in decks]
+
+
+@router.get("/{deck_id}", response_model=schemas.DeckStats)
+def get_deck(deck_id: int, db: Session = Depends(get_db)):
+    deck = db.get(Deck, deck_id)
+    if deck is None:
+        raise HTTPException(404, "デッキが見つかりません")
+    return _build_deck_stats(db, deck)
 
 
 @router.post("", response_model=schemas.DeckOut)

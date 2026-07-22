@@ -9,11 +9,24 @@ export default function Decks() {
   const [renaming, setRenaming] = useState<number | null>(null);
   const [renameVal, setRenameVal] = useState("");
   const skipBlur = useRef(false);
+  // デフォルトの1日の出題枚数(新規カード)
+  const [defaultNpd, setDefaultNpd] = useState("");
+  const [savedNpd, setSavedNpd] = useState(false);
 
   const load = () => api.get<DeckStats[]>("/api/decks").then(setDecks);
   useEffect(() => {
     load();
+    api
+      .get<{ new_per_day: string }>("/api/settings")
+      .then((s) => setDefaultNpd(s.new_per_day));
   }, []);
+
+  const saveDefault = async () => {
+    await api.put("/api/settings", { new_per_day: defaultNpd });
+    setSavedNpd(true);
+    setTimeout(() => setSavedNpd(false), 2000);
+    load(); // 実効枚数の表示を更新
+  };
 
   const create = async () => {
     if (!name.trim()) return;
@@ -54,6 +67,32 @@ export default function Decks() {
             onKeyDown={(e) => e.key === "Enter" && create()}
           />
           <Button onClick={create}>作成</Button>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm font-medium">
+            デフォルトの出題枚数（1日の新規カード数）
+          </label>
+          <input
+            type="number"
+            min={0}
+            className="w-24 border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            value={defaultNpd}
+            onChange={(e) => setDefaultNpd(e.target.value)}
+          />
+          <Button variant="secondary" onClick={saveDefault}>
+            保存
+          </Button>
+          {savedNpd && (
+            <span className="text-sm text-emerald-600 dark:text-emerald-400">
+              保存しました
+            </span>
+          )}
+          <span className="text-xs text-slate-400">
+            各デッキで「デフォルトに従う」設定のときに適用されます
+          </span>
         </div>
       </Card>
 
@@ -116,6 +155,10 @@ export default function Decks() {
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
                   新規 {d.new_count}
                 </span>
+              </div>
+              <div className="mt-1 text-xs text-slate-400">
+                1日の出題枚数: {d.effective_new_per_day} 枚
+                {d.new_per_day === 0 ? "（デフォルト）" : "（個別設定）"}
               </div>
               <div className="flex gap-2 mt-4">
                 <Link

@@ -246,3 +246,37 @@ def test_exam_structured_and_followup(client):
         ).status_code
         == 404
     )
+
+
+def test_new_per_day_default_and_override(client):
+    # デフォルト出題枚数を 3 に設定
+    client.put("/api/settings", json={"new_per_day": "3"})
+    try:
+        # 新規デッキは new_per_day=0 (=デフォルトに従う)
+        deck = client.post("/api/decks", json={"name": "追従デッキ"}).json()
+        did = deck["id"]
+        assert deck["new_per_day"] == 0
+        client.post(
+            f"/api/decks/{did}/cards/bulk",
+            json={"cards": [{"front": f"Q{i}", "back": "A"} for i in range(5)]},
+        )
+
+        stats = client.get(f"/api/decks/{did}").json()
+        assert stats["effective_new_per_day"] == 3
+        assert stats["new_count"] == 3  # デフォルト3が適用される
+
+        # 個別に 1 へ変更 → 個別値が優先
+        client.put(f"/api/decks/{did}", json={"new_per_day": 1})
+        stats = client.get(f"/api/decks/{did}").json()
+        assert stats["new_per_day"] == 1
+        assert stats["effective_new_per_day"] == 1
+        assert stats["new_count"] == 1
+
+        # 0 に戻すとデフォルトに従う
+        client.put(f"/api/decks/{did}", json={"new_per_day": 0})
+        stats = client.get(f"/api/decks/{did}").json()
+        assert stats["effective_new_per_day"] == 3
+        assert stats["new_count"] == 3
+    finally:
+        # 他テストへの影響を避けるためデフォルトを戻す
+        client.put("/api/settings", json={"new_per_day": "20"})
