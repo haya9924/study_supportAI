@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { api, Course, Material } from "../api";
 
+const KIND_LABEL: Record<string, string> = {
+  lecture: "講義資料",
+  past_exam: "過去問",
+  test_info: "テスト情報",
+  other: "その他",
+};
+
 export interface Selection {
   courseId: number | null;
   materialIds: number[];
@@ -77,7 +84,10 @@ export function MaterialPicker({
                 checked={value.materialIds.includes(m.id)}
                 onChange={() => toggle(m.id)}
               />
-              <span className="truncate">{m.title}</span>
+              <span className="truncate flex-1">{m.title}</span>
+              <span className="text-xs text-slate-400 flex-shrink-0">
+                {KIND_LABEL[m.kind] || m.kind}
+              </span>
             </label>
           ))}
         </div>

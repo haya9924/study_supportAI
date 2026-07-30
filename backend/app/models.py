@@ -76,6 +76,10 @@ class MaterialPage(Base):
 
     material: Mapped[Material] = relationship(back_populates="pages")
 
+    @property
+    def has_image(self) -> bool:
+        return bool(self.image_path)
+
 
 class ExamDoc(Base):
     __tablename__ = "exam_docs"

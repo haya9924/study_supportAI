@@ -51,8 +51,12 @@ def _build_content_md(questions: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-def _generate(db: Session, history: list[dict], ctx: str) -> list[dict]:
-    messages = prompts.exam_messages(history, ctx, _budget(db))
+def _generate(
+    db: Session, history: list[dict], ctx: context.ExamContext
+) -> list[dict]:
+    messages = prompts.exam_messages(
+        history, ctx.past_exam, ctx.test_info, ctx.reference, _budget(db)
+    )
     data = llm.chat_json(db, messages, temperature=0.6)
     questions = _normalize_questions(data)
     if not questions:
@@ -78,8 +82,8 @@ def get_exam(exam_id: int, db: Session = Depends(get_db)):
 
 @router.post("", response_model=schemas.ExamOut)
 def create_exam(payload: schemas.GenerateIn, db: Session = Depends(get_db)):
-    ctx = context.gather_context(db, payload.material_ids, payload.course_id)
-    if not ctx.strip():
+    ctx = context.gather_exam_context(db, payload.material_ids, payload.course_id)
+    if ctx.is_empty():
         raise HTTPException(400, "対象教材の文字起こしが見つかりません")
     instruction = payload.instruction or "過去問の傾向に沿った予想問題を作成してください。"
     history = [{"role": "user", "content": instruction}]
@@ -106,7 +110,7 @@ def revise_exam(
     exam = db.get(ExamDoc, exam_id)
     if exam is None:
         raise HTTPException(404, "予想問題が見つかりません")
-    ctx = context.gather_context(db, exam.source_material_ids, exam.course_id)
+    ctx = context.gather_exam_context(db, exam.source_material_ids, exam.course_id)
     history = list(exam.messages) + [{"role": "user", "content": payload.instruction}]
     questions = _generate(db, history, ctx)
     exam.questions = questions

@@ -51,6 +51,7 @@ class PageOut(ORMModel):
     ocr_text: str
     status: str
     error: str
+    has_image: bool = False
 
 
 class MaterialOut(ORMModel):
@@ -70,6 +71,13 @@ class MaterialDetail(MaterialOut):
 
 class PageTextIn(BaseModel):
     ocr_text: str
+
+
+class MaterialTextIn(BaseModel):
+    course_id: int | None = None
+    title: str = ""
+    text: str
+    kind: str = "test_info"
 
 
 class MaterialMoveIn(BaseModel):

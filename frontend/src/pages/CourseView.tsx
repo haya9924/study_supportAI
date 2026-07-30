@@ -6,6 +6,7 @@ import { Badge, Button, Card, Empty, Spinner } from "../components/ui";
 const KIND_LABEL: Record<string, string> = {
   lecture: "講義資料",
   past_exam: "過去問",
+  test_info: "テスト情報",
   other: "その他",
 };
 
@@ -21,6 +22,10 @@ export default function CourseView() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // テスト情報などのテキスト教材
+  const [textTitle, setTextTitle] = useState("");
+  const [textBody, setTextBody] = useState("");
+  const [addingText, setAddingText] = useState(false);
 
   const courseName = isUncategorized
     ? "未分類"
@@ -51,6 +56,26 @@ export default function CourseView() {
 
   const removePicked = (i: number) =>
     setPicked((prev) => prev.filter((_, idx) => idx !== i));
+
+  const addText = async () => {
+    if (!textBody.trim()) return;
+    setAddingText(true);
+    try {
+      await api.post("/api/materials/text", {
+        course_id: courseId,
+        title: textTitle,
+        text: textBody,
+        kind: "test_info",
+      });
+      setTextTitle("");
+      setTextBody("");
+      loadMaterials();
+    } catch (e) {
+      alert("追加失敗: " + (e as Error).message);
+    } finally {
+      setAddingText(false);
+    }
+  };
 
   const doUpload = async () => {
     if (picked.length === 0) return;
@@ -109,9 +134,43 @@ export default function CourseView() {
           >
             <option value="lecture">講義資料・スライド</option>
             <option value="past_exam">過去問</option>
+            <option value="test_info">テスト情報</option>
             <option value="other">その他</option>
           </select>
         </div>
+
+        {/* テスト情報: テキストで直接入力 */}
+        {kind === "test_info" && (
+          <div className="mb-4 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+            <div className="text-sm font-medium mb-1">
+              テスト情報をテキストで追加
+            </div>
+            <p className="text-xs text-slate-400 mb-2">
+              出題範囲・形式・配点・「こんな問題が出る」などを書いておくと、予想問題の作成時に反映されます。
+            </p>
+            <input
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm mb-2"
+              placeholder="タイトル（例: 中間テストの範囲・形式）"
+              value={textTitle}
+              onChange={(e) => setTextTitle(e.target.value)}
+            />
+            <textarea
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              rows={5}
+              placeholder="例: 大問5題。すべて記述式。第3〜5章から出題。証明問題が2題。電卓可。"
+              value={textBody}
+              onChange={(e) => setTextBody(e.target.value)}
+            />
+            <div className="mt-2 flex items-center gap-3">
+              <Button onClick={addText} disabled={addingText || !textBody.trim()}>
+                {addingText ? "追加中…" : "追加"}
+              </Button>
+              <span className="text-xs text-slate-400">
+                画像やPDFで添付する場合は下のファイル選択も使えます
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ドロップゾーン */}
         <div

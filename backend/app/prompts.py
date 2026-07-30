@@ -89,11 +89,45 @@ def grade_short_messages(question: str, model_answer: str, user_answer: str) -> 
     ]
 
 
-def exam_messages(history: list[dict], context: str, budget: int) -> list[dict]:
+def _exam_context_block(
+    past_exam: str, test_info: str, reference: str, budget: int
+) -> str:
+    """種別ごとにラベル付けした参考情報ブロックを作る。
+
+    過去問・テスト情報は優先して全文含め、参考資料を残り予算で切り詰める。
+    """
+    sections: list[str] = []
+    if past_exam.strip():
+        sections.append(
+            "--- 過去問(この出題形式・大問構成・配点・難易度・言い回しを忠実に踏襲すること) ---\n"
+            + past_exam
+        )
+    if test_info.strip():
+        sections.append(
+            "--- テスト情報(今回のテストの出題範囲・形式の指定。これに厳密に従って作問すること) ---\n"
+            + test_info
+        )
+    remaining = max(2000, budget - len(past_exam) - len(test_info))
+    ref = _context_block(reference, remaining)
+    if ref.strip():
+        sections.append("--- 参考資料(講義資料など) ---\n" + ref)
+    return "\n\n".join(sections) or "(参考情報なし)"
+
+
+def exam_messages(
+    history: list[dict],
+    past_exam: str,
+    test_info: str,
+    reference: str,
+    budget: int,
+) -> list[dict]:
     """予想問題(JSON構造化)の生成/改訂。history は過去の指示 (role/content)。"""
     system = (
         "あなたは大学の試験の予想問題を作成する専門家です。"
-        "提供された過去問や講義資料の傾向を踏まえ、本番を想定した予想問題を作成します。"
+        "提供された過去問・テスト情報・講義資料をもとに、本番を想定した予想問題を作成します。"
+        "【過去問】が与えられた場合は、その出題形式・大問構成・設問数・配点・難易度・"
+        "言い回しをできる限り忠実に踏襲してください。"
+        "【テスト情報】が与えられた場合は、そこに書かれた出題範囲・形式・条件に厳密に従って作問してください。"
         "各設問について、問題文・模範解答・解説を分けて出力してください。"
         "数式は LaTeX ($...$) で記述します。"
         "出力は JSON のみ: "
@@ -101,17 +135,14 @@ def exam_messages(history: list[dict], context: str, budget: int) -> list[dict]:
         '"answer": "模範解答(Markdown)", "explanation": "解説(Markdown)"}]} 。'
         "problem には解答や解説を含めないでください。"
     )
-    ctx = _context_block(context, budget)
+    ctx = _exam_context_block(past_exam, test_info, reference, budget)
     messages = [{"role": "system", "content": system}]
-    # 最初のユーザーメッセージに教材を添付
+    # 最初のユーザーメッセージに参考情報を添付
     first = True
     for h in history:
         if first and h["role"] == "user":
             messages.append(
-                {
-                    "role": "user",
-                    "content": f"{h['content']}\n\n--- 参考教材(過去問・講義資料) ---\n{ctx}",
-                }
+                {"role": "user", "content": f"{h['content']}\n\n{ctx}"}
             )
             first = False
         else:

@@ -48,6 +48,40 @@ def get_material(material_id: int, db: Session = Depends(get_db)):
     return material
 
 
+@router.post("/text", response_model=schemas.MaterialOut)
+def create_text_material(
+    payload: schemas.MaterialTextIn, db: Session = Depends(get_db)
+):
+    """テキストのみの教材(テスト情報など)を作成する。OCR は不要で即 ready。"""
+    text = payload.text.strip()
+    if not text:
+        raise HTTPException(400, "テキストを入力してください")
+    material = Material(
+        course_id=payload.course_id,
+        kind=payload.kind or "test_info",
+        title=payload.title.strip() or "テスト情報",
+        original_filename="",
+        stored_path="",
+        mime="text/plain",
+        status="ready",
+    )
+    db.add(material)
+    db.commit()
+    db.refresh(material)
+    db.add(
+        MaterialPage(
+            material_id=material.id,
+            page_no=1,
+            image_path="",
+            ocr_text=text,
+            status="done",
+        )
+    )
+    db.commit()
+    db.refresh(material)
+    return material
+
+
 @router.post("", response_model=list[schemas.MaterialOut])
 async def upload_materials(
     background: BackgroundTasks,

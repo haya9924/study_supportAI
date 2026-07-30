@@ -60,6 +60,7 @@ export interface Page {
   ocr_text: string;
   status: string;
   error: string;
+  has_image: boolean;
 }
 export interface MaterialDetail extends Material {
   pages: Page[];

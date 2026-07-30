@@ -280,3 +280,75 @@ def test_new_per_day_default_and_override(client):
     finally:
         # 他テストへの影響を避けるためデフォルトを戻す
         client.put("/api/settings", json={"new_per_day": "20"})
+
+
+def test_text_material_and_kind_aware_exam(client):
+    course = client.post("/api/courses", json={"name": "統計学"}).json()
+    cid = course["id"]
+
+    # テスト情報(テキスト教材)を追加 → OCR不要で即 ready
+    ti = client.post(
+        "/api/materials/text",
+        json={
+            "course_id": cid,
+            "title": "テスト範囲",
+            "text": "大問5題・すべて記述式・証明問題を2題含む",
+            "kind": "test_info",
+        },
+    ).json()
+    assert ti["kind"] == "test_info"
+    assert ti["status"] == "ready"
+    detail = client.get(f"/api/materials/{ti['id']}").json()
+    assert detail["pages"][0]["ocr_text"].startswith("大問5題")
+    assert detail["pages"][0]["has_image"] is False
+
+    # 過去問(テキスト)を追加
+    pe = client.post(
+        "/api/materials/text",
+        json={
+            "course_id": cid,
+            "title": "2023過去問",
+            "text": "問1 平均を求めよ / 問2 分散を求めよ",
+            "kind": "past_exam",
+        },
+    ).json()
+
+    # 両方を選んで予想問題生成が動く
+    exam = client.post(
+        "/api/exams",
+        json={"material_ids": [ti["id"], pe["id"]], "title": "予想"},
+    ).json()
+    assert exam["questions"]
+
+    # テスト情報のみの科目からフラッシュカードを作ろうとすると、
+    # test_info は学習素材から除外されるため対象なしで 400
+    only_ti_course = client.post("/api/courses", json={"name": "情報のみ"}).json()
+    only_ti = client.post(
+        "/api/materials/text",
+        json={"course_id": only_ti_course["id"], "text": "形式メモ", "kind": "test_info"},
+    ).json()
+    r = client.post(
+        "/api/generate/flashcards", json={"material_ids": [only_ti["id"]]}
+    )
+    assert r.status_code == 400
+
+    # 空テキストは 400
+    assert client.post("/api/materials/text", json={"text": "   "}).status_code == 400
+
+
+def test_exam_prompt_includes_kind_instructions():
+    from app import prompts
+
+    msgs = prompts.exam_messages(
+        [{"role": "user", "content": "作って"}],
+        past_exam="過去問の本文サンプル",
+        test_info="出題範囲メモ",
+        reference="講義ノート",
+        budget=12000,
+    )
+    system = msgs[0]["content"]
+    assert "忠実に踏襲" in system  # 過去問の形式踏襲の指示
+    user = msgs[1]["content"]
+    # 種別ごとにラベル付けされ、本文も含まれる
+    assert "過去問" in user and "過去問の本文サンプル" in user
+    assert "テスト情報" in user and "出題範囲メモ" in user

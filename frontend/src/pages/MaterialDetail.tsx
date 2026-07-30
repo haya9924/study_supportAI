@@ -88,19 +88,23 @@ export default function MaterialDetail() {
                       >
                         編集
                       </Button>
-                      <Button variant="ghost" onClick={() => reocr(p.id)}>
-                        再OCR
-                      </Button>
+                      {p.has_image && (
+                        <Button variant="ghost" onClick={() => reocr(p.id)}>
+                          再OCR
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <img
-                  src={`/api/materials/${m.id}/pages/${p.page_no}/image`}
-                  alt={`page ${p.page_no}`}
-                  className="w-full rounded-lg border border-slate-200"
-                />
+              <div className={p.has_image ? "grid grid-cols-2 gap-4" : ""}>
+                {p.has_image && (
+                  <img
+                    src={`/api/materials/${m.id}/pages/${p.page_no}/image`}
+                    alt={`page ${p.page_no}`}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700"
+                  />
+                )}
                 <div className="min-w-0">
                   {editing === p.id ? (
                     <textarea
