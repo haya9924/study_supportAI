@@ -99,12 +99,12 @@ def _exam_context_block(
     sections: list[str] = []
     if past_exam.strip():
         sections.append(
-            "--- 過去問(この出題形式・大問構成・配点・難易度・言い回しを忠実に踏襲すること) ---\n"
-            + past_exam
+            "--- 過去問(ユーザーの指示を優先しつつ、出題形式・大問構成・配点・"
+            "難易度・言い回しを踏襲する参考) ---\n" + past_exam
         )
     if test_info.strip():
         sections.append(
-            "--- テスト情報(今回のテストの出題範囲・形式の指定。これに厳密に従って作問すること) ---\n"
+            "--- テスト情報(ユーザーの指示を優先しつつ従う、出題範囲・形式の参考) ---\n"
             + test_info
         )
     remaining = max(2000, budget - len(past_exam) - len(test_info))
@@ -124,10 +124,13 @@ def exam_messages(
     """予想問題(JSON構造化)の生成/改訂。history は過去の指示 (role/content)。"""
     system = (
         "あなたは大学の試験の予想問題を作成する専門家です。"
-        "提供された過去問・テスト情報・講義資料をもとに、本番を想定した予想問題を作成します。"
-        "【過去問】が与えられた場合は、その出題形式・大問構成・設問数・配点・難易度・"
-        "言い回しをできる限り忠実に踏襲してください。"
-        "【テスト情報】が与えられた場合は、そこに書かれた出題範囲・形式・条件に厳密に従って作問してください。"
+        "次の優先順位で作問してください: "
+        "(1) ユーザーの指示が最優先。"
+        "(2) 【過去問】があれば、その出題形式・大問構成・設問数・配点・難易度・言い回しを踏襲。"
+        "(3) 【テスト情報】があれば、その出題範囲・形式の指定に従う。"
+        "(4) 【参考資料】は内容の参考。"
+        "これらが矛盾する場合は必ずユーザーの指示を優先し、ユーザーの指示に反しない範囲で"
+        "過去問の形式やテスト情報に従ってください。"
         "各設問について、問題文・模範解答・解説を分けて出力してください。"
         "数式は LaTeX ($...$) で記述します。"
         "出力は JSON のみ: "
@@ -137,12 +140,15 @@ def exam_messages(
     )
     ctx = _exam_context_block(past_exam, test_info, reference, budget)
     messages = [{"role": "system", "content": system}]
-    # 最初のユーザーメッセージに参考情報を添付
+    # 最初のユーザーメッセージに参考情報を添付 (指示は最優先として明示)
     first = True
     for h in history:
         if first and h["role"] == "user":
             messages.append(
-                {"role": "user", "content": f"{h['content']}\n\n{ctx}"}
+                {
+                    "role": "user",
+                    "content": f"【最優先の指示(ユーザー)】\n{h['content']}\n\n{ctx}",
+                }
             )
             first = False
         else:

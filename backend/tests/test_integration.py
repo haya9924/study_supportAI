@@ -347,8 +347,12 @@ def test_exam_prompt_includes_kind_instructions():
         budget=12000,
     )
     system = msgs[0]["content"]
-    assert "忠実に踏襲" in system  # 過去問の形式踏襲の指示
+    # ユーザーの指示が最優先である旨と、過去問の形式踏襲の指示
+    assert "最優先" in system
+    assert "踏襲" in system
     user = msgs[1]["content"]
+    # ユーザーの指示が最優先ラベル付きで含まれる
+    assert "【最優先の指示(ユーザー)】" in user and "作って" in user
     # 種別ごとにラベル付けされ、本文も含まれる
     assert "過去問" in user and "過去問の本文サンプル" in user
     assert "テスト情報" in user and "出題範囲メモ" in user
