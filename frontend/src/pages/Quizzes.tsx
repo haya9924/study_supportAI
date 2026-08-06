@@ -1,39 +1,49 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { api, Quiz, QuizDetail } from "../api";
-import { Button, Card, Empty, Spinner } from "../components/ui";
+import { Button, Card, Empty } from "../components/ui";
 import { MaterialPicker, Selection } from "../components/MaterialPicker";
+import { useTasks } from "../tasks";
 
 export default function Quizzes() {
-  const nav = useNavigate();
+  const { start, tasks } = useTasks();
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [sel, setSel] = useState<Selection>({ courseId: null, materialIds: [] });
   const [title, setTitle] = useState("");
   const [instruction, setInstruction] = useState("");
   const [count, setCount] = useState(8);
-  const [busy, setBusy] = useState(false);
 
   const load = () => api.get<Quiz[]>("/api/quizzes").then(setQuizzes);
   useEffect(() => {
     load();
   }, []);
 
-  const create = async () => {
-    setBusy(true);
-    try {
-      const q = await api.post<QuizDetail>("/api/quizzes", {
-        course_id: sel.courseId,
-        material_ids: sel.materialIds,
-        instruction,
-        count,
-        title: title || "クイズ",
-      });
-      nav(`/quizzes/${q.id}`);
-    } catch (e) {
-      alert("生成失敗: " + (e as Error).message);
-    } finally {
-      setBusy(false);
-    }
+  // 生成タスクが完了したら一覧を更新
+  useEffect(() => {
+    if (tasks.some((t) => t.kind === "quiz" && t.status === "done")) load();
+  }, [tasks]);
+
+  const create = () => {
+    const displayTitle = title || "クイズ";
+    start({
+      kind: "quiz",
+      label: `クイズ「${displayTitle}」を作成中…`,
+      run: async () => {
+        const q = await api.post<QuizDetail>("/api/quizzes", {
+          course_id: sel.courseId,
+          material_ids: sel.materialIds,
+          instruction,
+          count,
+          title: displayTitle,
+        });
+        return {
+          result: q,
+          link: `/quizzes/${q.id}`,
+          linkLabel: "開く",
+          doneLabel: `クイズ「${q.title}」ができました`,
+        };
+      },
+    });
   };
 
   const remove = async (id: number) => {
@@ -70,10 +80,10 @@ export default function Quizzes() {
           />
         </div>
         <div className="mt-3 flex items-center gap-3">
-          <Button onClick={create} disabled={busy}>
-            {busy ? "生成中…" : "生成する"}
-          </Button>
-          {busy && <Spinner />}
+          <Button onClick={create}>生成する</Button>
+          <span className="text-xs text-slate-400">
+            生成は裏で実行され、他の画面に移動できます
+          </span>
         </div>
       </Card>
 

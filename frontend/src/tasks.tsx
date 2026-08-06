@@ -13,7 +13,7 @@ import { Spinner } from "./components/ui";
 
 export interface BgTask {
   id: string;
-  kind: string; // "exam" | "flashcards"
+  kind: string; // "exam" | "quiz" | "flashcards"
   label: string;
   status: "running" | "done" | "error";
   meta?: Record<string, unknown>;
