@@ -26,7 +26,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
 .theme-btn .moon{display:none}
 [data-theme="dark"] .theme-btn .sun{display:none}
 [data-theme="dark"] .theme-btn .moon{display:block}
-@media(max-width:540px){.nav{display:none}}
+@media(max-width:540px){.topbar{flex-wrap:wrap;gap:8px 16px}.nav{flex:1 1 100%;order:5;justify-content:center;padding:2px 0 0}}
 .wrap{max-width:840px;margin:0 auto;padding:32px 20px 80px}
 h1{font-family:var(--font-head);font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
 .sub{color:var(--ink-2);font-size:.9rem;margin-top:2px}
@@ -72,9 +72,9 @@ h1{font-family:var(--font-head);font-size:1.5rem;font-weight:700;letter-spacing:
 <header class="topbar">
   <div class="brand"><span class="logo">学</span>study<b>SupportAI</b></div>
   <nav class="nav">
-    <a class="item active" href="index.html">ホーム</a>
-    <a class="item" href="study.html">学習</a>
+    <a class="item active" href="home.html">マップ</a>
     <a class="item" href="materials.html">教材</a>
+    <a class="item" href="stats.html">統計</a>
     <a class="item" href="settings.html">設定</a>
   </nav>
   <div class="spacer"></div>
@@ -124,7 +124,7 @@ h1{font-family:var(--font-head);font-size:1.5rem;font-weight:700;letter-spacing:
     </div>
     <div class="task">
       <div class="ic">文</div>
-      <div class="bd"><div class="t">予想問題: 中間試験対策</div><div class="d">残り 2 大問 ・ 前回 82 点</div></div>
+      <div class="bd"><div class="t">過去問演習: 中間試験対策</div><div class="d">残り 2 大問 ・ 前回 82 点</div></div>
       <a class="go" href="study.html#blank">やる →</a>
     </div>
     <div class="task">

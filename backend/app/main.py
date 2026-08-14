@@ -11,12 +11,13 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import init_db
 from .routers import (
+    ai_router,
     courses_router,
     dashboard_router,
     decks_router,
-    exams_router,
     generate_router,
     materials_router,
+    plans_router,
     quizzes_router,
     settings_router,
 )
@@ -40,12 +41,13 @@ app.add_middleware(
 
 app.include_router(settings_router.router)
 app.include_router(courses_router.router)
+app.include_router(plans_router.router)
 app.include_router(materials_router.router)
 app.include_router(generate_router.router)
 app.include_router(decks_router.router)
 app.include_router(quizzes_router.router)
-app.include_router(exams_router.router)
 app.include_router(dashboard_router.router)
+app.include_router(ai_router.router)
 
 
 @app.get("/api/health")

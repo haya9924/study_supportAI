@@ -89,92 +89,249 @@ def grade_short_messages(question: str, model_answer: str, user_answer: str) -> 
     ]
 
 
-def _exam_context_block(
-    past_exam: str, test_info: str, reference: str, budget: int
-) -> str:
-    """種別ごとにラベル付けした参考情報ブロックを作る。
-
-    過去問・テスト情報は優先して全文含め、参考資料を残り予算で切り詰める。
-    """
-    sections: list[str] = []
-    if past_exam.strip():
-        sections.append(
-            "--- 過去問(ユーザーの指示を優先しつつ、出題形式・大問構成・配点・"
-            "難易度・言い回しを踏襲する参考) ---\n" + past_exam
-        )
-    if test_info.strip():
-        sections.append(
-            "--- テスト情報(ユーザーの指示を優先しつつ従う、出題範囲・形式の参考) ---\n"
-            + test_info
-        )
-    remaining = max(2000, budget - len(past_exam) - len(test_info))
-    ref = _context_block(reference, remaining)
-    if ref.strip():
-        sections.append("--- 参考資料(講義資料など) ---\n" + ref)
-    return "\n\n".join(sections) or "(参考情報なし)"
-
-
-def exam_messages(
+def tutor_messages(
+    question: str,
+    model_answer: str,
+    user_answer: str,
+    user_question: str,
     history: list[dict],
-    past_exam: str,
-    test_info: str,
-    reference: str,
-    budget: int,
 ) -> list[dict]:
-    """予想問題(JSON構造化)の生成/改訂。history は過去の指示 (role/content)。"""
-    system = (
-        "あなたは大学の試験の予想問題を作成する専門家です。"
-        "次の優先順位で作問してください: "
-        "(1) ユーザーの指示が最優先。"
-        "(2) 【過去問】があれば、その出題形式・大問構成・設問数・配点・難易度・言い回しを踏襲。"
-        "(3) 【テスト情報】があれば、その出題範囲・形式の指定に従う。"
-        "(4) 【参考資料】は内容の参考。"
-        "これらが矛盾する場合は必ずユーザーの指示を優先し、ユーザーの指示に反しない範囲で"
-        "過去問の形式やテスト情報に従ってください。"
-        "各設問について、問題文・模範解答・解説を分けて出力してください。"
-        "数式は LaTeX ($...$) で記述します。"
-        "出力は JSON のみ: "
-        '{"questions": [{"problem": "問題文(Markdown)", '
-        '"answer": "模範解答(Markdown)", "explanation": "解説(Markdown)"}]} 。'
-        "problem には解答や解説を含めないでください。"
-    )
-    ctx = _exam_context_block(past_exam, test_info, reference, budget)
-    messages = [{"role": "system", "content": system}]
-    # 最初のユーザーメッセージに参考情報を添付 (指示は最優先として明示)
-    first = True
-    for h in history:
-        if first and h["role"] == "user":
-            messages.append(
-                {
-                    "role": "user",
-                    "content": f"【最優先の指示(ユーザー)】\n{h['content']}\n\n{ctx}",
-                }
-            )
-            first = False
-        else:
-            messages.append({"role": h["role"], "content": h["content"]})
-    return messages
+    """学習フローの設問に対するチューター Q&A を組み立てる。
 
-
-def exam_followup_messages(
-    question: dict, history: list[dict], user_question: str
-) -> list[dict]:
-    """予想問題の特定の設問に対する学習者の追加質問に答える。"""
+    history は過去の Q&A ペア (role/content)。answer の出し惜しみはせず、
+    分かりやすく日本語で回答する。
+    """
     system = (
-        "あなたは学習者を助けるチューターです。"
-        "以下の問題・模範解答・解説を踏まえ、学習者の追加質問に日本語で分かりやすく答えます。"
+        "あなたは学習者を一人ずつ教えるチューターです。"
+        "以下の問題と模範解答を踏まえ、学習者の追加質問に日本語で分かりやすく答えます。"
+        "質問の意図を汲み、定義や仕組みを噛み砕いて説明します。"
         "数式は LaTeX ($...$) で記述します。"
     )
-    ctx = (
-        f"問題:\n{question.get('problem', '')}\n\n"
-        f"模範解答:\n{question.get('answer', '')}\n\n"
-        f"解説:\n{question.get('explanation', '')}"
-    )
+    ctx = f"問題:\n{question}\n\n模範解答:\n{model_answer}"
+    if user_answer.strip():
+        ctx += f"\n\n学習者の解答:\n{user_answer}"
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": ctx},
     ]
-    for f in history:
-        messages.append({"role": f["role"], "content": f["content"]})
-    messages.append({"role": "user", "content": user_question})
+    for h in history:
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+    messages.append({"role": "user", "content": f"追加質問: {user_question}"})
+    return messages
+
+
+def plan_messages(
+    test_days: int,
+    nodes: list[dict],
+    past_exams: list[dict] | None = None,
+    study_method: str = "",
+) -> list[dict]:
+    """テスト逆算の日割り学習プランを提案する。
+
+    nodes: 各ノードの {id, name, type, state, weight}。残りノードと日数から
+    実行可能な日割りを組む。
+    past_exams: 取り込まれた過去問の {title, year, exam_type}。ある場合は
+    「過去問演習」の回をプランに含める。
+    study_method: 学習者の学習法・方針。非空なら必ず従う。
+    """
+    system = (
+        "あなたは学習計画を立案する教育コーチです。"
+        "テストまでの残り日数と未クリアのノード一覧から、日割り学習プランを提案します。"
+        "1 日ごとに消化するノードを割り当て、無理なく全ノードを緑(クリア)まで到達させます。"
+        "過去問・予想問題がある場合は、テスト前に「過去問演習」の回を適切に組み込みます。"
+        "過去問演習の回は nodes に [過去問演習: タイトル(年度)] の形式で含めます。"
+    )
+    if study_method.strip():
+        system += (
+            "\n【学習者の学習法・方針（この方針に必ず従ってプランを組むこと）】\n"
+            + study_method.strip()
+        )
+    system += (
+        '出力は JSON のみ: {"plan": [{"day": 1, "nodes": ["ノード名", ...], '
+        '"note": "1日の狙い・目安時間"}], "summary": "全体方針の短い説明"} 。'
+    )
+    node_lines = "\n".join(
+        f"- {n.get('name','')} (type={n.get('type','')}, state={n.get('state','')})"
+        for n in nodes
+    )
+    exam_lines = "\n".join(
+        f"- {p.get('title','')} (年度 {p.get('year','')}, {p.get('exam_type','')})"
+        for p in (past_exams or [])
+    )
+    user = (
+        f"テストまで {test_days} 日。未クリアのノード:\n{node_lines or '(なし)'}\n\n"
+        f"過去問:\n{exam_lines or '(なし)'}\n\n"
+        "日割りプランを提案してください。"
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def plan_nodes_messages(
+    test_days: int,
+    course_name: str,
+    materials: list[dict],
+    study_method: str = "",
+) -> list[dict]:
+    """科目の教材から、学習マップに載せるノード構造を生成する (第1段・設計)。
+
+    光合成マップと同じように、各ノードに type (discovery/basic/practice/
+    merge/gate/boss) と内容・依存関係・day を与え、学習の流れを組み立てる。
+    materials: 教材の {title, kind}。kind は lecture/basic/other/test_info/
+    past_exam。
+    """
+    system = (
+        "あなたはカリキュラム設計者です。与えられた教材の本文を読み、"
+        "「過去問から逆算」して学習マップに載せるノード構造を設計します。"
+        "各ノードは学習のまとまり(単元・概念・演習)を表し、"
+        "type は次のいずれかです:\n"
+        "- discovery: 発見・概要（教材を読んで全体像をつかむ入口）\n"
+        "- basic: 基礎概念（単一の概念・用語を理解確認）\n"
+        "- practice: 演習（反復練習で「できる」化）\n"
+        "- merge: 合流（複数の要素を組み合わせる総合問題）\n"
+        "- gate: 診断チェック（前提ノードから混合問題を生成して弱点を検出）\n"
+        "- boss: 総仕上げ（科目の最終確認・過去問演習）\n"
+        "\n【生成手順（必須）】\n"
+        "1. まず kind=past_exam の教材本文から、実際に出題されているテーマ・用語・"
+        "出題形式を特定する。これが最優先でカバーすべき対象。\n"
+        "2. 次に kind=lecture（レジュメ/講義資料）の本文を読み、過去問のテーマに"
+        "対応する講義内容・用語を特定し、ノードの学習ポイントに反映する。\n"
+        "3. テスト日から逆算して day を配分する。頻出テーマほど序盤に配置し、"
+        "残りの日数で全体を網羅する。\n"
+        "4. 過去問に出たテーマは必ずノードとして含める。講義のみで過去問に出ていない"
+        "内容は「余力があれば」扱いにする。\n"
+        "2日リズムを守り、各ノードに day(1〜テストまでの日数) を割り当てます。"
+        "Day1 は「わかる」(discovery/basic)、Day2 は「できる」(practice/merge)。"
+        "gate は basic/practice を 2 つ以上クリアした後に置き、boss は最後の過去問"
+        "演習の日に置きます。from にはそのノードの前提となるノードidを入れます。"
+        "ノード数は 6〜20 個程度にまとめます。"
+        "過去問がある場合は最後に「過去問演習」の boss ノードを置きます。"
+    )
+    if study_method.strip():
+        system += (
+            "\n【学習者の学習法・方針（この方針に必ず従って設計すること）】\n"
+            + study_method.strip()
+        )
+    system += (
+        "\n出力は JSON のみ: {\"nodes\": [{\"id\": \"n1\", \"name\": \"ノード名\", "
+        "\"type\": \"basic\", \"content\": \"学習ポイント(2〜3文)\", "
+        "\"from\": [\"n0\"], \"day\": 1}], \"summary\": \"全体方針の短い説明\"}。"
+        "id は n1,n2,... のような短いユニークな文字列にしてください。"
+    )
+    def fmt(m: dict) -> str:
+        kind = m.get("kind", "")
+        meta = f"{m.get('title','')} (kind={kind}"
+        if m.get("year"):
+            meta += f", 年度={m['year']}"
+        meta += ")"
+        content = (m.get("content") or "").strip()
+        if not content:
+            return f"- {meta} （本文なし）"
+        return f"- {meta}\n  本文: {content}"
+    mat_lines = "\n".join(fmt(m) for m in materials)
+    user = (
+        f"科目: {course_name}\nテストまで {test_days} 日。教材とOCR本文:\n{mat_lines or '(なし)'}\n\n"
+        "過去問で問われているテーマを特定し、そこから逆算してこの科目の学習ノード構造を設計してください。"
+    )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def node_problems_messages(
+    nodes: list[dict], exam_text: str = ""
+) -> list[dict]:
+    """設計済みノードの内部内容を深めるサブエージェント。
+
+    各ノードについて、学習ポイントを「復習できる問題」に落とし込む。
+    nodes: 第1段で生成された {id, name, type, content} の一覧。
+    exam_text: 過去問のOCR本文。あれば出題形式・用語に合わせて問題を作る。
+    """
+    system = (
+        "あなたはテスト作成のサブエージェントです。渡された各ノードの内容を深く理解し、"
+        "そのノードを確実に理解できるようにするための復習問題を作成します。\n"
+        "・各ノードに 2〜3 問（gate は 3〜4 問、boss は 3〜5 問）作成する。\n"
+        "・短答式と選択式を混ぜる。選択式は options に 3〜4 個の選択肢を入れ、"
+        "a には正解の選択肢の文字列そのものを入れる。\n"
+        "・q は「〜とは何か」「〜はどうなるか」「なぜ〜か」のような明確な問い。\n"
+        "・a は模範解答、why は「なぜそうなるのか」の解説(誤答処理に使う)。\n"
+        "・間違えやすいポイント(ひっかけ)を含めるとよい。\n"
+        "問題はすべて日本語で。"
+        '出力は JSON のみ: {"problems": [{"node_id": "n1", "problems": ['
+        '{"q": "...", "options": ["..."], "a": "...", "why": "..."}]}]}'
+    )
+    node_lines = "\n".join(
+        f"- {n.get('id','')}: {n.get('name','')} (type={n.get('type','')}) "
+        f"内容: {n.get('content','')}"
+        for n in nodes
+    )
+    user = f"次のノードそれぞれに復習問題を作成してください:\n\n{node_lines}"
+    if exam_text.strip():
+        user += (
+            "\n\n【過去問の出題傾向（可能なら同じ出題形式・用語で問題を作る）】\n"
+            + exam_text.strip()[:2000]
+        )
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
+    ]
+
+
+def plan_chat_messages(
+    test_days: int,
+    nodes: list[dict],
+    history: list[dict],
+    past_exams: list[dict] | None = None,
+    study_method: str = "",
+) -> list[dict]:
+    """プランについて AI と話し合う相談チャット。
+
+    history は過去のやり取り (role/content)。AI は会話に応じて日割りプランを
+    提案・調整できる。プランを変更する場合のみ plan を返す。
+    past_exams: 過去問一覧。テスト前に過去問演習の回を組み込める。
+    study_method: 学習者の学習法・方針。非空なら必ず従う。
+    """
+    system = (
+        "あなたは学習プランを一緒に考えるコーチです。プラン相談の相手として"
+        "学習者と日本語で会話し、テストまでの日数・未クリアノード・ペース・復習の"
+        "タイミングを考慮して日割りプランを提案・調整します。"
+        "過去問・予想問題がある場合は、テスト前に過去問演習の回を組み込みます。"
+        "過去問演習の回は nodes に [過去問演習: タイトル(年度)] の形式で含めます。"
+        "要求が具体的になるまで質問してから提案するか、すぐに提案できます。"
+    )
+    if study_method.strip():
+        system += (
+            "\n【学習者の学習法・方針（この方針に必ず従うこと）】\n"
+            + study_method.strip()
+        )
+    system += (
+        '出力は JSON のみ: {"message": "学習者への返信(日本語)", '
+        '"plan": [{"day": 1, "nodes": ["ノード名", ...], "note": "1日の狙い"}], '
+        '"summary": "調整後の全体方針(プランを変えない場合は空文字)"} 。'
+        "プランを変える場合のみ plan と summary を、会話のみなら message だけを返してください。"
+    )
+    node_lines = "\n".join(
+        f"- {n.get('name','')} (type={n.get('type','')}, state={n.get('state','')})"
+        for n in nodes
+    )
+    exam_lines = "\n".join(
+        f"- {p.get('title','')} (年度 {p.get('year','')}, {p.get('exam_type','')})"
+        for p in (past_exams or [])
+    )
+    messages = [
+        {"role": "system", "content": system},
+        {
+            "role": "user",
+            "content": (
+                f"テストまで {test_days} 日。未クリアのノード:\n{node_lines or '(なし)'}\n\n"
+                f"過去問:\n{exam_lines or '(なし)'}\n\n"
+                "これからプランについて話し合います。最新の発言に返答してください。"
+            ),
+        },
+    ]
+    for h in history:
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
     return messages

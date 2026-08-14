@@ -26,32 +26,35 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
 .theme-btn .moon{display:none}
 [data-theme="dark"] .theme-btn .sun{display:none}
 [data-theme="dark"] .theme-btn .moon{display:block}
-@media(max-width:540px){.nav{display:none}}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 80px}
-h1{font-family:var(--font-head);font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
-.sub{color:var(--ink-2);font-size:.9rem;margin-top:2px}
-.section-title{font-size:.75rem;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;margin:28px 0 10px}
-
+@media(max-width:540px){.topbar{flex-wrap:wrap;gap:8px 16px}.nav{flex:1 1 100%;order:5;justify-content:center;padding:2px 0 0}}
+.wrap{max-width:720px;margin:0 auto;padding:24px 20px 80px}
+h1{font-family:var(--font-head);font-size:1.4rem;font-weight:700;letter-spacing:-.01em}
+.sub{color:var(--ink-2);font-size:.86rem;margin-top:2px}
+.mocknote{display:flex;align-items:center;gap:8px;margin-top:14px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);color:var(--warn);font-size:.78rem;font-weight:600;padding:8px 12px;border-radius:8px}
+.mocknote.hidden{display:none}
+.section-title{font-size:.72rem;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;margin:26px 0 10px}
 .card{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);box-shadow:var(--shadow-raised);padding:20px}
 .card+.card{margin-top:12px}
 .card h2{font-family:var(--font-head);font-size:1rem;font-weight:600;margin-bottom:4px}
 .card .desc{font-size:.82rem;color:var(--ink-2);margin-bottom:16px}
 .field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
 .field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px}
 .field .hint{font-size:.75rem;color:var(--ink-3);margin-top:4px}
 input[type="text"],input[type="password"],select{width:100%;background:var(--surface-subtle);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;color:var(--ink);font-family:inherit;font-size:.875rem;transition:border-color .12s,box-shadow .12s,background .12s}
-input:hover,select:hover{border-color:var(--accent-focus)}
-input:focus,select:focus{outline:none;border-color:var(--accent-focus);box-shadow:0 0 0 1px var(--accent-focus);background:var(--surface)}
+textarea{width:100%;background:var(--surface-subtle);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;color:var(--ink);font-family:inherit;font-size:.85rem;line-height:1.6;resize:vertical;transition:border-color .12s,box-shadow .12s,background .12s}
+input:hover,select:hover,textarea:hover{border-color:var(--accent-focus)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent-focus);box-shadow:0 0 0 1px var(--accent-focus);background:var(--surface)}
 select{cursor:pointer}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border-radius:var(--r-sm);font-family:inherit;font-size:.875rem;font-weight:600;cursor:pointer;border:1px solid transparent;background:var(--surface-subtle);color:var(--ink);transition:background .12s,border-color .12s,box-shadow .12s}
 .btn:hover{background:var(--surface-hover)}
-.btn:active{background:var(--surface-hover)}
-.btn:focus-visible{outline:none;box-shadow:var(--focus-ring)}
 .btn.primary{background:var(--accent);color:#fff}
 .btn.primary:hover{background:var(--accent-hover)}
-.btn.ghost{background:transparent;color:var(--ink-2)}
-.btn.ghost:hover{background:var(--line-soft);color:var(--ink)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.teststatus{margin-top:12px;font-size:.78rem;font-weight:600;color:var(--ok)}
+.teststatus.err{color:var(--ng)}
+.teststatus.hidden{display:none}
 .toggle{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line-soft)}
 .toggle:last-child{border-bottom:none}
 .toggle .t{font-weight:600;font-size:.9rem}
@@ -63,15 +66,17 @@ select{cursor:pointer}
 .switch input:checked+.sl{background:var(--accent)}
 .switch input:checked+.sl::before{transform:translateX(20px)}
 .footer-note{text-align:center;color:var(--ink-3);font-size:.75rem;margin-top:28px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:.82rem;font-weight:600;box-shadow:var(--shadow-overlay);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
 </style>
 </head>
 <body>
 <header class="topbar">
   <div class="brand"><span class="logo">学</span>study<b>SupportAI</b></div>
   <nav class="nav">
-    <a class="item" href="index.html">ホーム</a>
-    <a class="item" href="study.html">学習</a>
+    <a class="item" href="home.html">マップ</a>
     <a class="item" href="materials.html">教材</a>
+    <a class="item" href="stats.html">統計</a>
     <a class="item active" href="settings.html">設定</a>
   </nav>
   <div class="spacer"></div>
@@ -84,33 +89,73 @@ select{cursor:pointer}
 <main class="wrap">
   <h1>設定</h1>
   <p class="sub">AI接続と学習の好みを管理します。</p>
+  <div class="mocknote" id="mockNote">モック動作中です（外部 AI に接続しません）。.env の LLM_MOCK=0 と API キー設定で本物の AI が使えます。</div>
 
   <!-- LLM設定 -->
   <div class="section-title">AI 接続</div>
   <div class="card">
     <h2>LLM 設定</h2>
-    <div class="desc">OCR・問題生成・採点・学習ナビに使うAIの接続先です。</div>
+    <div class="desc">OCR・問題生成・採点・プラン提案に使うAIの接続先です。</div>
     <div class="field">
       <label>ベース URL</label>
-      <input type="text" value="https://openrouter.ai/api/v1">
+      <input type="text" id="fBase" placeholder="https://openrouter.ai/api/v1">
       <div class="hint">OpenAI 互換 API のベース URL（例: OpenRouter）</div>
     </div>
     <div class="field">
       <label>API キー</label>
-      <input type="password" placeholder="sk-…">
-      <div class="hint">保存時にはサーバー側にのみ保持され、画面に再表示されません。</div>
+      <input type="password" id="fKey" placeholder="sk-…">
+      <div class="hint" id="keyHint">サーバー側にのみ保持され、画面に再表示されません。空欄のまま保存すると変更しません。</div>
     </div>
     <div class="field">
       <label>Vision モデル（OCR用）</label>
-      <input type="text" value="google/gemini-2.5-flash">
+      <input type="text" id="fVision" placeholder="google/gemini-2.5-flash">
     </div>
     <div class="field">
       <label>テキストモデル（生成・採点用）</label>
-      <input type="text" value="google/gemini-2.5-flash">
+      <input type="text" id="fText" placeholder="google/gemini-2.5-flash">
     </div>
     <div class="btn-row">
-      <button class="btn primary">保存する</button>
-      <button class="btn">接続テスト</button>
+      <button class="btn primary" id="saveBtn" onclick="save()">保存する</button>
+      <button class="btn" id="testBtn" onclick="testConn()">接続テスト</button>
+      <div class="teststatus hidden" id="testStatus"></div>
+    </div>
+  </div>
+
+  <!-- 教材フォルダ -->
+  <div class="section-title">教材</div>
+  <div class="card">
+    <h2>教材フォルダ</h2>
+    <div class="desc">このフォルダを教材フォルダとして扱います。<code>科目/ファイル</code> 構成のまま教材一覧に取り込まれます。</div>
+    <div class="field">
+      <label>現在のフォルダ</label>
+      <div class="hint" id="libNow">読み込み中…</div>
+    </div>
+    <div class="field">
+      <label>切り替え先のパス</label>
+      <input type="text" id="fLibPath" placeholder="/path/to/study_materials">
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="libBtn" onclick="saveLib()">このフォルダに切り替える</button>
+    </div>
+  </div>
+
+  <!-- テスト設定 -->
+  <div class="section-title">テスト計画</div>
+  <div class="card">
+    <h2>テスト情報</h2>
+    <div class="desc">テスト日と目標点を登録すると、プランナーが日割りを逆算します。</div>
+    <div class="field">
+      <label>テスト日</label>
+      <input type="date" id="fDate">
+      <div class="hint">未登録の場合は残り14日として扱います</div>
+    </div>
+    <div class="field">
+      <label>目標点（100点満点）</label>
+      <input type="text" id="fGoal" placeholder="例: 80">
+      <div class="hint">プランナーと統計の表示に使います</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="saveTest()">テスト情報を保存</button>
     </div>
   </div>
 
@@ -121,15 +166,33 @@ select{cursor:pointer}
     <div class="desc">AIナビゲーションが学習計画を立てるときの基準です。</div>
     <div class="field">
       <label>1日の新しいフラッシュカード数</label>
-      <select><option>10 枚</option><option selected>20 枚</option><option>30 枚</option><option>50 枚</option></select>
+      <select id="fNew">
+        <option value="10">10 枚</option>
+        <option value="20">20 枚</option>
+        <option value="30">30 枚</option>
+        <option value="50">50 枚</option>
+      </select>
     </div>
     <div class="field">
       <label>目標保持率（復習間隔の調整）</label>
-      <select><option>85%</option><option selected>90%</option><option>95%</option></select>
+      <select id="fRetention">
+        <option value="0.85">85%</option>
+        <option value="0.9">90%</option>
+        <option value="0.95">95%</option>
+      </select>
     </div>
     <div class="field">
-      <label>1日の目標学習時間</label>
-      <select><option>30 分</option><option selected>60 分</option><option>120 分</option></select>
+      <label>AI コンテキスト文字数（長い教材向け）</label>
+      <select id="fBudget">
+        <option value="8000">8,000 文字</option>
+        <option value="12000">12,000 文字</option>
+        <option value="16000">16,000 文字</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>学習法（プラン構築の基準）</label>
+      <textarea id="fStudy" rows="8" placeholder="例: 教材は最小限のインプットにしてすぐアウトプット。1ノードを2日で仕上げる…"></textarea>
+      <div class="hint">ここに書いた学習法・方針を AI がプランを組むときに必ず従います。</div>
     </div>
   </div>
 
@@ -137,21 +200,173 @@ select{cursor:pointer}
   <div class="section-title">通知と表示</div>
   <div class="card">
     <h2>通知</h2>
-    <div class="desc">学習リマインダーを制御します。</div>
+    <div class="desc">学習リマインダーを制御します（端末側の設定として保存されます）。</div>
     <div class="toggle">
       <div><div class="t">復習リマインダー</div><div class="d">期限が来たカードを通知でお知らせ</div></div>
-      <label class="switch"><input type="checkbox" checked><span class="sl"></span></label>
+      <label class="switch"><input type="checkbox" id="nReminder"><span class="sl"></span></label>
     </div>
     <div class="toggle">
       <div><div class="t">AIナビの今日のプラン</div><div class="d">毎朝、今日の学習タスクを提案</div></div>
-      <label class="switch"><input type="checkbox" checked><span class="sl"></span></label>
+      <label class="switch"><input type="checkbox" id="nPlan"><span class="sl"></span></label>
     </div>
   </div>
 
-  <p class="footer-note">study_supportAI — 設定（プロトタイプ）</p>
+  <p class="footer-note">study_supportAI — 設定</p>
 </main>
+
+<div class="toast" id="toast"></div>
 <script>
-function toggleTheme(){var r=document.documentElement;r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';}
+window.addEventListener('error',function(e){
+  var d=document.getElementById('errbar');
+  if(!d){ d=document.createElement('div'); d.id='errbar'; d.style.cssText='position:fixed;left:0;right:0;top:0;background:#de350b;color:#fff;padding:8px 16px;z-index:99999;font-size:12px;font-family:monospace;white-space:pre-wrap'; document.body.appendChild(d); }
+  d.textContent='JS エラー: '+(e.message||'')+(e.lineno?(' @ '+(e.filename||'').split('/').pop()+':'+e.lineno):'');
+});
+
+/* ============ テーマ ============ */
+function toggleTheme(){
+  var r=document.documentElement;
+  r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';
+  try{ localStorage.setItem('theme',r.dataset.theme); }catch(e){}
+}
+try{ document.documentElement.dataset.theme=localStorage.getItem('theme')||'light'; }catch(e){}
+
+/* ============ API ============ */
+let API_BASE='';
+async function resolveApiBase(){
+  if(API_BASE) return;
+  try{
+    const r=await fetch('/api/health',{signal:AbortSignal.timeout(1000)});
+    if(r.ok){ API_BASE=''; return; }
+  }catch(e){}
+  const cands=['http://'+location.hostname+':8000','http://localhost:8000'];
+  for(const c of cands){
+    try{
+      const r=await fetch(c+'/api/health',{signal:AbortSignal.timeout(1500)});
+      if(r.ok){ API_BASE=c; return; }
+    }catch(e){}
+  }
+  API_BASE=cands[0];
+}
+async function api(path,opts){
+  opts=opts||{};
+  await resolveApiBase();
+  const res=await fetch(API_BASE+path,Object.assign({headers:{}},opts));
+  if(!res.ok){ let msg='http '+res.status; try{ const j=await res.json(); msg=j.detail||msg; }catch(e){} throw new Error(msg); }
+  const ct=res.headers.get('content-type')||'';
+  return ct.indexOf('json')>=0?res.json():res.text();
+}
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+/* ============ 読み込み ============ */
+async function load(){
+  try{
+    const s=await api('/api/settings');
+    document.getElementById('fBase').value=s.api_base_url||'';
+    document.getElementById('fKey').placeholder=s.api_key_set?'（設定済み・変更しない場合は空欄）':'sk-…';
+    document.getElementById('fVision').value=s.vision_model||'';
+    document.getElementById('fText').value=s.text_model||'';
+    setSel('fNew',s.new_per_day); setSel('fRetention',s.desired_retention); setSel('fBudget',s.context_char_budget);
+    document.getElementById('fDate').value=s.test_date||'';
+    document.getElementById('fGoal').value=s.test_goal||'';
+    document.getElementById('fStudy').value=s.study_method||'';
+    document.getElementById('libNow').textContent=s.materials_dir||'';
+    document.getElementById('fLibPath').value=s.materials_dir||'';
+    if(s.llm_mock) document.getElementById('mockNote').classList.remove('hidden');
+  }catch(e){
+    toast('設定の読み込みに失敗しました: '+(e.message||e));
+  }
+  loadNotify();
+}
+function setSel(id,val){
+  const sel=document.getElementById(id);
+  if(sel.querySelector('option[value="'+val+'"]')) sel.value=val;
+}
+function loadNotify(){
+  let n={reminder:true,plan:true};
+  try{ n=Object.assign(n,JSON.parse(localStorage.getItem('settings_notify')||'{}')); }catch(e){}
+  document.getElementById('nReminder').checked=n.reminder;
+  document.getElementById('nPlan').checked=n.plan;
+}
+function saveNotify(){
+  try{
+    localStorage.setItem('settings_notify',JSON.stringify({
+      reminder:document.getElementById('nReminder').checked,
+      plan:document.getElementById('nPlan').checked,
+    }));
+  }catch(e){}
+}
+['nReminder','nPlan'].forEach(id=>{ document.getElementById(id).addEventListener('change',saveNotify); });
+
+/* ============ 操作 ============ */
+async function save(){
+  const btn=document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='保存中…';
+  try{
+    await api('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      api_base_url:document.getElementById('fBase').value.trim(),
+      api_key:document.getElementById('fKey').value,
+      vision_model:document.getElementById('fVision').value.trim(),
+      text_model:document.getElementById('fText').value.trim(),
+      new_per_day:document.getElementById('fNew').value,
+      desired_retention:document.getElementById('fRetention').value,
+      context_char_budget:document.getElementById('fBudget').value,
+      study_method:document.getElementById('fStudy').value,
+    })});
+    document.getElementById('fKey').value='';
+    toast('設定を保存しました');
+    load();
+  }catch(e){
+    toast('保存に失敗しました: '+(e.message||e));
+  }
+  btn.disabled=false; btn.textContent='保存する';
+}
+async function saveTest(){
+  try{
+    await api('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      test_date:document.getElementById('fDate').value,
+      test_goal:document.getElementById('fGoal').value.trim(),
+    })});
+    toast('テスト情報を保存しました');
+  }catch(e){
+    toast('保存に失敗しました: '+(e.message||e));
+  }
+}
+async function saveLib(){
+  const path=document.getElementById('fLibPath').value.trim();
+  if(!path){ toast('フォルダのパスを入力してください'); return; }
+  const btn=document.getElementById('libBtn');
+  btn.disabled=true; btn.textContent='切り替え中…';
+  try{
+    await api('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({materials_dir:path}),signal:AbortSignal.timeout(20000)});
+    toast('教材フォルダを切り替えました');
+    load();
+  }catch(e){
+    toast('切り替えに失敗しました: '+(e.message||e));
+  }finally{
+    btn.disabled=false; btn.textContent='このフォルダに切り替える';
+  }
+}
+async function testConn(){
+  const btn=document.getElementById('testBtn');
+  const st=document.getElementById('testStatus');
+  btn.disabled=true; btn.textContent='テスト中…';
+  st.classList.add('hidden');
+  try{
+    const r=await api('/api/settings/test',{method:'POST'});
+    st.classList.remove('hidden'); st.classList.remove('err');
+    st.textContent='接続OK: '+r.count+' モデルを取得しました';
+  }catch(e){
+    st.classList.remove('hidden'); st.classList.add('err');
+    st.textContent='接続NG: '+(e.message||e);
+  }
+  btn.disabled=false; btn.textContent='接続テスト';
+}
+
+load();
 </script>
 </body>
 </html>

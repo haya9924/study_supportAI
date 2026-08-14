@@ -26,7 +26,7 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
 .theme-btn .moon{display:none}
 [data-theme="dark"] .theme-btn .sun{display:none}
 [data-theme="dark"] .theme-btn .moon{display:block}
-@media(max-width:760px){.nav{display:none}}
+@media(max-width:760px){.topbar{flex-wrap:wrap;gap:8px 16px}.nav{flex:1 1 100%;order:5;justify-content:center;padding:2px 0 0}}
 
 /* ===== ヘッダー帯（今日のステージ・デッドライン） ===== */
 .dash{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line-soft);flex-shrink:0}
@@ -93,9 +93,9 @@ body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:
 <header class="topbar">
   <div class="brand"><span class="logo">学</span>study<b>SupportAI</b></div>
   <nav class="nav">
-    <a class="item active" href="map.html">マップ</a>
-    <a class="item" href="study.html">学習</a>
+    <a class="item active" href="home.html">マップ</a>
     <a class="item" href="materials.html">教材</a>
+    <a class="item" href="stats.html">統計</a>
     <a class="item" href="settings.html">設定</a>
   </nav>
   <div class="spacer"></div>
@@ -571,7 +571,7 @@ function hitTest(mx,my){
     const br=proj(n.x+n.w,-T,n.z+n.h), bl=proj(n.x,-T,n.z+n.h);
     if(pointInQuad(mx,my,tl,tr,br,bl)) return n.id;
     const nw0=proj(n.x,0,n.z), ne0=proj(n.x+n.w,0,n.z), sw0=proj(n.x,0,n.z+n.h), se0=proj(n.x+n.w,0,n.z+n.h);
-    const nwT=proj(n.x,-T,n.z), swT=proj(n.x,-T,n.z+n.h), seT=proj(n.x+n.w,-T,n.z+n.h);
+    const nwT=proj(n.x,-T,n.z), neT=proj(n.x+n.w,-T,n.z), swT=proj(n.x,-T,n.z+n.h), seT=proj(n.x+n.w,-T,n.z+n.h);
     if(pointInQuad(mx,my,sw0,se0,seT,swT)) return n.id;
     if(pointInQuad(mx,my,ne0,se0,seT,neT)) return n.id;
   }

@@ -2,6 +2,9 @@
 /data/
 data/
 
+# Mounted material library (personal study materials)
+library/
+
 # Python
 __pycache__/
 *.py[cod]

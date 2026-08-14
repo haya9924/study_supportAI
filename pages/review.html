@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>復習 | study_supportAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:'Inter','Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,-apple-system,Meiryo,sans-serif;--font-head:'Space Grotesk','Inter','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;--bg:#f4f5f7;--surface:#fff;--surface-hover:#f4f5f7;--ink:#172b4d;--ink-2:#42526e;--ink-3:#6b778c;--line:#dfe1e6;--line-soft:#ebecf0;--accent:#0052cc;--accent-hover:#0747a6;--accent-soft:#e9f2ff;--ok:#00875a;--ok-soft:#e3fcef;--ng:#de350b;--ng-soft:#ffebe6;--warn:#ff8b00;--warn-soft:#fffae6;--violet:#6554c0;--violet-soft:#f0eeff;--link:#0052cc;--shadow-raised:0 1px 1px rgba(9,30,66,.25),0 0 1px rgba(9,30,66,.31);--shadow-overlay:0 12px 24px -6px rgba(9,30,66,.25),0 0 1px rgba(9,30,66,.31);--r-sm:4px;--r:8px}
+[data-theme="dark"]{--bg:#161a1d;--surface:#22272b;--surface-hover:#282e33;--ink:#c7d1db;--ink-2:#9fadbc;--ink-3:#8993a4;--line:#454f59;--line-soft:#38414a;--accent:#579dff;--accent-hover:#85b8ff;--accent-soft:#1d2a44;--ok:#4bce97;--ok-soft:#164b35;--ng:#ff5630;--ng-soft:#4a1d15;--warn:#ffab00;--warn-soft:#4d3a0a;--violet:#9f8fef;--violet-soft:#352c63;--link:#579dff;--shadow-raised:0 1px 1px rgba(0,0,0,.4),0 0 1px rgba(0,0,0,.7);--shadow-overlay:0 12px 24px -6px rgba(0,0,0,.6),0 0 1px rgba(0,0,0,.7)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;min-height:100vh}
+a{color:var(--link);text-decoration:none}
+.topbar{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line-soft);position:sticky;top:0;z-index:50}
+.brand{font-family:var(--font-head);font-weight:700;font-size:1.05rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.brand .logo{width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+.brand b{color:var(--accent);font-weight:700}
+.nav{display:flex;gap:2px}
+.nav .item{color:var(--ink-2);text-decoration:none;font-size:.82rem;font-weight:600;padding:6px 11px;border-radius:var(--r-sm);transition:background .12s,color .12s;white-space:nowrap}
+.nav .item:hover{background:var(--surface-hover);color:var(--ink)}
+.nav .item.active{color:var(--accent);background:var(--accent-soft)}
+.topbar .spacer{flex:1}
+@media(max-width:640px){.topbar{flex-wrap:wrap;gap:8px 16px}.nav{flex:1 1 100%;order:5;justify-content:center;padding:2px 0 0}}
+.theme-btn{background:var(--surface-hover);border:1px solid var(--line-soft);color:var(--ink-2);width:34px;height:34px;border-radius:var(--r-sm);cursor:pointer;display:grid;place-items:center;transition:background .12s,color .12s}
+.theme-btn:hover{background:var(--line-soft);color:var(--ink)}
+.theme-btn .moon{display:none}
+[data-theme="dark"] .theme-btn .sun{display:none}
+[data-theme="dark"] .theme-btn .moon{display:block}
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:.85rem;font-weight:600;color:var(--ink-2);background:var(--surface-hover);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 16px;cursor:pointer;transition:background .12s,border .12s,color .12s;text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--line-soft);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.sm{padding:6px 10px;font-size:.76rem}
+.btn.ai{background:var(--violet-soft);border-color:var(--violet);color:var(--violet)}
+.btn.ai:hover{background:var(--violet-soft);color:var(--violet);opacity:.85}
+
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 80px}
+.headcard{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);box-shadow:var(--shadow-raised);padding:18px 20px}
+.headcard .top{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.headcard .back{font-size:.78rem;font-weight:600;color:var(--ink-2)}
+.headcard .back:hover{color:var(--accent)}
+.headcard .tag{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);flex:1}
+.headcard .dd{font-family:var(--font-head);font-size:.78rem;font-weight:700;color:var(--warn);background:var(--warn-soft);padding:3px 10px;border-radius:99px}
+.headcard h1{font-family:var(--font-head);font-weight:600;font-size:1.28rem;letter-spacing:-.01em}
+
+.prog{display:flex;align-items:center;gap:12px;margin:18px 0 14px}
+.prog .bar{flex:1;height:6px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.prog .lbl{font-size:.75rem;color:var(--ink-2);white-space:nowrap}
+.prog .ct{font-size:.75rem;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.prog .ct b.ok{color:var(--ok)}
+.prog .ct b.ng{color:var(--ng)}
+
+.flash{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r);box-shadow:var(--shadow-raised);padding:26px 24px;margin-bottom:16px;min-height:220px;display:flex;flex-direction:column}
+.flash .no{font-size:.7rem;font-weight:700;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+.flash .fq{font-family:var(--font-head);font-size:1.15rem;font-weight:600;color:var(--ink);margin-top:12px;line-height:1.6;flex:1}
+.flash .fa{display:none;margin-top:16px;font-size:.9rem;color:var(--ok);background:var(--ok-soft);border-radius:var(--r-sm);padding:12px 14px;font-weight:600}
+.flash .fa.show{display:block}
+.flash .ai{display:none;margin-top:10px;font-size:.82rem;color:var(--ink);background:var(--surface-hover);border-radius:var(--r-sm);padding:10px 14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.flash .ai.show{display:block}
+.flash .ai.busy{color:var(--ink-3)}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.acts .sp{flex:1}
+
+.judge{display:flex;gap:10px;margin-top:14px}
+.judge .j{flex:1;font-family:inherit;font-size:.86rem;font-weight:700;padding:12px 10px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:all .12s}
+.judge .j.ok{color:var(--ink-2)}
+.judge .j.ok:hover{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.judge .j.ng:hover{border-color:var(--ng);background:var(--ng-soft);color:var(--ng)}
+
+.empty{text-align:center;padding:40px 16px}
+.empty h2{font-family:var(--font-head);font-size:1.15rem;font-weight:700;margin-bottom:8px}
+.empty p{font-size:.84rem;color:var(--ink-2);margin-bottom:18px}
+.empty .sched{display:inline-block;font-size:.78rem;color:var(--ink-2);background:var(--surface-hover);border-radius:var(--r-sm);padding:8px 14px;margin-bottom:18px}
+.empty .acts{justify-content:center}
+
+.result{text-align:center;padding:28px 8px 10px}
+.result .r-ico{width:54px;height:54px;border-radius:99px;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:1.5rem;margin:0 auto 14px}
+.result h2{font-family:var(--font-head);font-size:1.2rem;font-weight:700;margin-bottom:6px}
+.result p{font-size:.86rem;color:var(--ink-2);margin-bottom:20px}
+.result .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;font-size:.82rem;font-weight:600;padding:9px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:100;box-shadow:var(--shadow-overlay)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">学</span>study<b>SupportAI</b></div>
+  <nav class="nav">
+    <a class="item active" href="home.html">マップ</a>
+    <a class="item" href="materials.html">教材</a>
+    <a class="item" href="stats.html">統計</a>
+    <a class="item" href="settings.html">設定</a>
+  </nav>
+  <div class="spacer"></div>
+  <button class="theme-btn" id="themeBtn" title="テーマ切替"><span class="sun">●</span><span class="moon">●</span></button>
+</header>
+
+<div class="wrap">
+  <div class="headcard">
+    <div class="top">
+      <a class="back" href="home.html">← マップへ</a>
+      <span class="tag">復習（分散学習）</span>
+      <span class="dd" id="hDue">今日</span>
+    </div>
+    <h1 id="hName">ノード名</h1>
+  </div>
+  <div class="prog">
+    <div class="bar"><i id="rvBar" style="width:0%"></i></div>
+    <span class="lbl" id="rvLbl">0 / 0</span>
+    <span class="ct">○<b class="ok" id="ctOk">0</b> ・ ×<b class="ng" id="ctNg">0</b></span>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="srs.js"></script>
+<script>
+const params=new URLSearchParams(location.search);
+const NODE_ID=params.get('n')||'b1';
+let nodeInfo={name:'ノード',type:'basic',zone:'A'};
+try{
+  const nodes=JSON.parse(localStorage.getItem('mapNodes')||'null');
+  if(nodes){ const f=nodes.find(x=>x.id===NODE_ID); if(f) nodeInfo=f; }
+}catch(e){}
+
+const CARDS={
+ d1:[
+   {q:'光合成の原料は何と何か',a:'二酸化炭素（CO2）と水（H2O）'},
+   {q:'光合成でつくられる有機物は何か',a:'ブドウ糖（グルコース）'},
+   {q:'光合成で放出される気体は何か',a:'酸素（O2）'}
+ ],
+ b1:[
+   {q:'光合成が行われる細胞小器官は何か',a:'葉緑体'},
+   {q:'明反応が行われる場所は何か',a:'グラナ（チラコイド）'},
+   {q:'暗反応が行われる場所は何か',a:'ストロマ'}
+ ],
+ b2:[
+   {q:'光エネルギーはまず何に変換されるか',a:'ATP と NADPH'},
+   {q:'ATP は何を運ぶ役割か',a:'エネルギー'},
+   {q:'ATP と NADPH はどこで使われるか',a:'暗反応（カルビン回路）'}
+ ],
+ b3:[
+   {q:'光合成で発生する酸素の由来は何か',a:'水（H2O）'},
+   {q:'水の光分解で生じる気体は何か',a:'酸素（O2）'},
+   {q:'水の分解式「2H2O → ?」の右辺を答えよ',a:'O2 + 4H+ + 4e-'}
+ ],
+ br1:[
+   {q:'水の分解で生じる気体は何か',a:'酸素（O2）'},
+   {q:'「水2分子から酸素1分子」を何というか',a:'2→1酸素の比'}
+ ],
+ b4:[
+   {q:'CO2 が有機物に取り込まれることを何というか',a:'CO2 の固定'},
+   {q:'CO2 の固定が行われる反応回路は何か',a:'カルビン回路'}
+ ],
+ m1:[
+   {q:'明反応のエネルギー源は何か',a:'光'},
+   {q:'明反応でつくられるエネルギー担体は何と何か',a:'ATP と NADPH'},
+   {q:'明反応で放出される気体は何か',a:'酸素（O2）'}
+ ]
+};
+const FALLBACK=[{q:'この概念を自分の言葉で説明できるか',a:'説明できるレベルまで理解する'},{q:'具体例や図をイメージできるか',a:'具体例を1つ言える'}];
+const DATA=CARDS[NODE_ID]||FALLBACK;
+const content=function(idx){ return DATA[idx%DATA.length]; };
+
+document.getElementById('hName').textContent=nodeInfo.name;
+document.getElementById('hDue').textContent='復習 '+SRS.dueCount(NODE_ID)+'枚';
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+function navTo(name){ toast(name+'は未実装です（次のフェーズで作成予定）'); return false; }
+document.getElementById('themeBtn').onclick=()=>{
+  const h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+  try{ localStorage.setItem('theme',h.dataset.theme); }catch(e){}
+};
+try{ const t=localStorage.getItem('theme'); if(t==='dark') document.documentElement.dataset.theme='dark'; }catch(e){}
+
+let session=SRS.dueIdx(NODE_ID);
+let pos=0, ok=0, ng=0;
+let API_BASE='';
+async function resolveApiBase(){
+  if(API_BASE) return;
+  try{
+    const r=await fetch('/api/health',{signal:AbortSignal.timeout(1000)});
+    if(r.ok){ API_BASE=''; return; }
+  }catch(e){}
+  const cands=['http://'+location.hostname+':8000','http://localhost:8000'];
+  for(const c of cands){
+    try{
+      const r=await fetch(c+'/api/health',{signal:AbortSignal.timeout(1500)});
+      if(r.ok){ API_BASE=c; return; }
+    }catch(e){}
+  }
+  API_BASE=cands[0];
+}
+function aiExplain(){
+  const el=document.getElementById('aiBox');
+  if(!el) return;
+  const idx=session[pos];
+  const card=content(idx);
+  el.classList.add('show','busy');
+  el.textContent='AI が解説中…';
+  fetch(API_BASE+'/api/ai/tutor',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({question:card.q,model_answer:card.a,user_answer:'',user_question:'この答えについて、理由や仕組みを交えて詳しく解説してください。',history:[]}),
+    signal:AbortSignal.timeout(60000),
+  }).then(r=>r.json()).then(d=>{
+    el.classList.remove('busy'); el.textContent=d.answer||'（説明を取得できませんでした）';
+  }).catch(()=>{ el.classList.remove('busy'); el.textContent='AI に接続できませんでした。'; });
+}
+function showAnswer(){
+  const fa=document.getElementById('fa'); if(!fa) return;
+  fa.classList.add('show');
+  const ai=document.getElementById('aiBox');
+  ai.classList.add('show');
+  document.getElementById('ansBtn').style.display='none';
+}
+function judge(correct){
+  const idx=session[pos];
+  SRS.mark(NODE_ID,idx,correct);
+  if(correct) ok++; else ng++;
+  updateProg();
+  pos++;
+  if(pos>=session.length){ finish(); return; }
+  renderCard();
+}
+function renderCard(){
+  const idx=session[pos];
+  const card=content(idx);
+  document.getElementById('stage').innerHTML=
+    '<div class="flash">'+
+      '<div class="no">カード '+(pos+1)+' / '+session.length+'</div>'+
+      '<div class="fq">'+card.q+'</div>'+
+      '<div class="fa" id="fa">→ '+card.a+'</div>'+
+      '<div class="ai" id="aiBox"></div>'+
+      '<div class="acts">'+
+        '<button class="btn sm ai" onclick="aiExplain()">AIで解説</button>'+
+        '<span class="sp"></span>'+
+        '<button class="btn primary sm" id="ansBtn" onclick="showAnswer()">答えを表示</button>'+
+      '</div>'+
+      '<div class="judge">'+
+        '<button class="j ok" onclick="judge(true)">○ わかった</button>'+
+        '<button class="j ng" onclick="judge(false)">× わからなかった</button>'+
+      '</div>'+
+    '</div>';
+  updateProg();
+}
+function updateProg(){
+  document.getElementById('rvBar').style.width=Math.round(pos/session.length*100)+'%';
+  document.getElementById('rvLbl').textContent=(Math.min(pos+1,session.length))+' / '+session.length;
+  document.getElementById('ctOk').textContent=ok;
+  document.getElementById('ctNg').textContent=ng;
+}
+function finish(){
+  document.getElementById('stage').innerHTML='<div class="flash"><div class="result">'+
+    '<div class="r-ico">◎</div><h2>今日の復習完了</h2>'+
+    '<p>○ わかった: '+ok+' 問 ・ × わからなかった: '+ng+' 問<br>× のカードはまた今日の復習に出てきます。</p>'+
+    '<div class="actions"><a class="btn primary" href="home.html">マップへ戻る</a>'+
+    '<a class="btn" href="review.html?n='+NODE_ID+'"'+(ng>0?'':' style="display:none"')+'>× を解き直す</a></div>'+
+    '</div></div>';
+  document.getElementById('rvBar').style.width='100%';
+  document.getElementById('rvLbl').textContent=session.length+' / '+session.length;
+}
+function showEmpty(){
+  const all=SRS.all(NODE_ID);
+  const left=all.length-session.length;
+  document.getElementById('stage').innerHTML='<div class="flash"><div class="empty">'+
+    '<h2>今日の復習はありません</h2>'+
+    '<p>「'+nodeInfo.name+'」のカードは準備中です。</p>'+
+    '<div class="sched">次の予定: '+(left>0?'あと '+left+' 枚は今後数日に分散して出題されます':'なし（新しく学習するとカードが追加されます）')+'</div>'+
+    '<div class="actions"><a class="btn primary" href="home.html">マップへ戻る</a>'+
+    '<a class="btn" href="study.html?n='+NODE_ID+'&d=2">このノードを学習する</a></div>'+
+    '</div></div>';
+}
+
+if(session.length){
+  renderCard();
+}else{
+  showEmpty();
+}
+resolveApiBase();
+</script>
+</body>
+</html>

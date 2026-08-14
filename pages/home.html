@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マップ | study_supportAI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--font-ui:'Inter','Hiragino Kaku Gothic ProN','Noto Sans JP',system-ui,-apple-system,Meiryo,sans-serif;--font-head:'Space Grotesk','Inter','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;--bg:#f4f5f7;--surface:#fff;--surface-hover:#f4f5f7;--surface-subtle:#fafbfc;--ink:#172b4d;--ink-2:#42526e;--ink-3:#6b778c;--line:#dfe1e6;--line-soft:#ebecf0;--accent:#0052cc;--accent-hover:#0747a6;--accent-focus:#4c9aff;--accent-soft:#e9f2ff;--ok:#00875a;--ok-soft:#e3fcef;--ng:#de350b;--ng-soft:#ffebe6;--warn:#ff8b00;--warn-soft:#fffae6;--violet:#6554c0;--violet-soft:#f0eeff;--link:#0052cc;--shadow-raised:0 1px 1px rgba(9,30,66,.25),0 0 1px rgba(9,30,66,.31);--shadow-overlay:0 12px 24px -6px rgba(9,30,66,.25),0 0 1px rgba(9,30,66,.31);--r-sm:4px;--r:8px}
+[data-theme="dark"]{--bg:#161a1d;--surface:#22272b;--surface-hover:#282e33;--surface-subtle:#1c2125;--ink:#c7d1db;--ink-2:#9fadbc;--ink-3:#8993a4;--line:#454f59;--line-soft:#38414a;--accent:#579dff;--accent-hover:#85b8ff;--accent-focus:#579dff;--accent-soft:#1d2a44;--ok:#4bce97;--ok-soft:#164b35;--ng:#ff5630;--ng-soft:#4a1d15;--warn:#ffab00;--warn-soft:#4d3a0a;--violet:#9f8fef;--violet-soft:#352c63;--link:#579dff;--shadow-raised:0 1px 1px rgba(0,0,0,.4),0 0 1px rgba(0,0,0,.7);--shadow-overlay:0 12px 24px -6px rgba(0,0,0,.6),0 0 1px rgba(0,0,0,.7)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .2s,color .2s;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line-soft);flex-shrink:0}
+.brand{font-family:var(--font-head);font-weight:700;font-size:1.05rem;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.brand .logo{width:28px;height:28px;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+.brand b{color:var(--accent);font-weight:700}
+.nav{display:flex;gap:2px;overflow-x:auto}
+.nav .item{color:var(--ink-2);text-decoration:none;font-size:.82rem;font-weight:600;padding:6px 11px;border-radius:var(--r-sm);transition:background .12s,color .12s;white-space:nowrap;cursor:pointer;border:none;background:transparent;font-family:inherit}
+.nav .item:hover{background:var(--surface-hover);color:var(--ink)}
+.nav .item.active{color:var(--accent);background:var(--accent-soft)}
+.topbar .spacer{flex:1}
+.streak{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:99px;background:var(--surface-hover);border:1px solid var(--line-soft);font-size:.75rem;font-weight:700;color:var(--warn);white-space:nowrap}
+.streak svg{flex-shrink:0}
+.theme-btn{background:var(--surface-hover);border:1px solid var(--line-soft);color:var(--ink-2);width:34px;height:34px;border-radius:var(--r-sm);cursor:pointer;display:grid;place-items:center;transition:background .12s,color .12s}
+.theme-btn:hover{background:var(--line-soft);color:var(--ink)}
+.theme-btn .moon{display:none}
+[data-theme="dark"] .theme-btn .sun{display:none}
+[data-theme="dark"] .theme-btn .moon{display:block}
+@media(max-width:960px){.topbar{flex-wrap:wrap;gap:8px 16px}.nav{flex:1 1 100%;order:5;justify-content:center;padding:2px 0 0}}
+
+/* ===== ヘッダー帯（今日のステージ・デッドライン） ===== */
+.dash{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line-soft);flex-shrink:0}
+.today{display:flex;align-items:center;gap:14px;flex:1;min-width:280px}
+.today .tk{font-size:.7rem;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+.today .nm{font-family:var(--font-head);font-weight:600;font-size:1rem}
+.today .day{font-size:.78rem;color:var(--ink-2);margin-top:2px}
+.today .go{color:var(--link);font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.today .go:hover{text-decoration:underline}
+.prog{display:flex;align-items:center;gap:10px}
+.prog .bar{width:140px;height:6px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.prog .lbl{font-size:.75rem;color:var(--ink-2);white-space:nowrap}
+.dl{display:flex;align-items:center;gap:14px;font-size:.8rem;color:var(--ink-2);white-space:nowrap}
+.dl .warn{color:var(--warn);font-weight:700}
+.dl .ok{color:var(--ok);font-weight:700}
+.dl .kv b{color:var(--ink)}
+.af2{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ===== トップバー 常駐ウィジェット ===== */
+.pomo{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 4px 0 12px;border-radius:99px;background:var(--surface-hover);border:1px solid var(--line-soft);font-size:.75rem;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.pomo .pt{font-variant-numeric:tabular-nums;color:var(--ink)}
+.pomo .pb{width:26px;height:26px;border-radius:99px;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:.74rem;display:grid;place-items:center;flex-shrink:0;transition:background .12s}
+.pomo .pb:hover{background:var(--accent-hover)}
+
+/* ===== メイン列: 今日やること + 3D マップ ===== */
+.mainrow{display:flex;flex:1;min-height:0}
+.taskbar{width:290px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line-soft);overflow-y:auto;padding:14px 12px}
+.taskbar .tb-h{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 4px 10px;display:flex;align-items:center;justify-content:space-between}
+.taskbar .tb-h .cnt{color:var(--accent)}
+.titem{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;cursor:pointer;border:1px solid transparent;transition:background .12s,border .12s}
+.titem:hover{background:var(--surface-hover)}
+.titem.done{opacity:.45}
+.titem .tnum{width:22px;height:22px;border-radius:99px;background:var(--ink-3);color:#fff;font-size:.72rem;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.titem .tnum.k-review{background:var(--accent)}
+.titem .tnum.k-study{background:var(--ok)}
+.titem .tnum.k-dg{background:var(--violet)}
+.titem .tnum.k-boost{background:var(--warn)}
+.titem .tbd{flex:1;min-width:0}
+.titem .tbadge{display:inline-block;font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:99px;margin-bottom:3px}
+.titem .tbadge.b-review{background:var(--accent-soft);color:var(--accent)}
+.titem .tbadge.b-study{background:var(--ok-soft);color:var(--ok)}
+.titem .tbadge.b-dg{background:var(--violet-soft);color:var(--violet)}
+.titem .tbadge.b-boost{background:var(--warn-soft);color:var(--warn)}
+.titem .tbadge.b-plan{background:var(--surface-hover);color:var(--ink-2)}
+.titem .tname{font-size:.82rem;font-weight:600;color:var(--ink);line-height:1.35}
+.titem .tdesc{font-size:.72rem;color:var(--ink-2);margin-top:2px;line-height:1.4}
+.titem .tcheck{width:18px;height:18px;border-radius:99px;border:1.5px solid var(--line);color:transparent;display:grid;place-items:center;font-size:.62rem;flex-shrink:0;margin-top:2px;transition:all .12s}
+.titem.done .tcheck{background:var(--ok);border-color:var(--ok);color:#fff}
+.taskbar .tb-empty{font-size:.75rem;color:var(--ink-3);text-align:center;padding:20px 8px;line-height:1.6}
+@media(max-width:1100px){.taskbar{width:236px}}
+@media(max-width:860px){.taskbar{display:none}}
+
+/* ===== 3D マップビューア（Canvas） ===== */
+.viewport{position:relative;flex:1;overflow:hidden;background:
+  radial-gradient(circle at 30% 20%, color-mix(in srgb,var(--accent) 7%, transparent), transparent 60%),
+  radial-gradient(circle at 80% 80%, color-mix(in srgb,var(--ok) 5%, transparent), transparent 60%),
+  var(--bg)}
+.viewport .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);font-size:.72rem;color:var(--ink-3);background:color-mix(in srgb,var(--surface) 80%,transparent);padding:4px 12px;border-radius:99px;border:1px solid var(--line-soft);z-index:8;white-space:nowrap}
+.viewport canvas{position:absolute;inset:0;display:block;cursor:grab;touch-action:none}
+.viewport canvas.dragging{cursor:grabbing}
+
+/* ===== 詳細パネル ===== */
+.panel{position:absolute;top:12px;right:12px;width:320px;max-height:calc(100% - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line-soft);border-radius:12px;box-shadow:var(--shadow-overlay);padding:16px;z-index:30;animation:slidein .22s ease}
+@keyframes slidein{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+.panel .pk{font-size:.7rem;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase}
+.panel h3{font-family:var(--font-head);font-size:1.05rem;margin:2px 0 6px}
+.panel .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;color:var(--ink-2);margin:4px 0}
+.panel .row b{color:var(--ink);font-weight:600}
+.panel .desc{font-size:.8rem;color:var(--ink-2);margin:8px 0 12px}
+.panel .mem{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-radius:8px;padding:10px;font-size:.78rem;color:var(--ink-2);margin-bottom:12px}
+.panel .mem .mk{font-weight:700;color:var(--accent);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:3px}
+.panel .rhythm{background:var(--surface-subtle);border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;font-size:.75rem;color:var(--ink-2);margin-bottom:12px}
+.panel .rhythm .rt{font-weight:700;color:var(--ink);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.panel .rhythm .rd{margin:2px 0}
+.panel .rhythm .rd b{color:var(--ink-2)}
+.panel .task-list{display:flex;flex-direction:column;gap:6px;margin:10px 0 12px}
+.panel .task{display:flex;align-items:flex-start;gap:8px;background:var(--surface-subtle);border:1px solid var(--line-soft);border-radius:8px;padding:8px 10px;font-size:.78rem;color:var(--ink);line-height:1.5}
+.panel .task .tdot{flex-shrink:0;width:7px;height:7px;border-radius:50%;background:var(--violet);margin-top:5px}
+.panel .pl-note{background:var(--violet-soft);border:1px solid color-mix(in srgb,var(--violet) 25%,transparent);border-radius:8px;padding:9px 11px;font-size:.75rem;color:var(--ink-2);margin-bottom:12px}
+.panel .actions{display:flex;flex-direction:column;gap:8px}
+.badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:99px;font-size:.68rem;font-weight:700}
+.badge.b-ok{background:var(--ok);color:#fff}.badge.b-warn{background:var(--warn);color:#fff}.badge.b-ng{background:var(--ng);color:#fff}
+.badge.b-prog{background:var(--accent);color:#fff}.badge.b-idle{background:var(--line-soft);color:var(--ink-2)}
+.badge.b-gate{background:var(--violet);color:#fff}.badge.b-violet{background:var(--violet);color:#fff}
+.meta2{font-size:.74rem;color:var(--ink-3)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:34px;padding:0 14px;border-radius:var(--r-sm);font-family:inherit;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid transparent;background:var(--surface-subtle);color:var(--ink);transition:background .12s,box-shadow .12s}
+.btn:hover{background:var(--surface-hover)}
+.btn:active{background:var(--surface-hover)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover)}
+.btn.danger{background:var(--ng-soft);color:var(--ng)}
+.btn.danger:hover{background:color-mix(in srgb,var(--ng-soft) 80%,var(--ng-soft))}
+.btn.ghost{background:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--line-soft);color:var(--ink)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+
+/* ===== ズームコントロール・凡例 ===== */
+.zc{position:absolute;right:12px;bottom:14px;display:flex;flex-direction:column;gap:6px;z-index:30}
+.zc .b{width:34px;height:34px;border-radius:8px;background:var(--surface);border:1px solid var(--line-soft);box-shadow:var(--shadow-raised);color:var(--ink-2);cursor:pointer;font-size:1rem;display:grid;place-items:center;transition:background .12s}
+.zc .b:hover{background:var(--surface-hover);color:var(--ink)}
+.legend{position:absolute;left:14px;bottom:44px;background:var(--surface);border:1px solid var(--line-soft);border-radius:10px;box-shadow:var(--shadow-raised);padding:10px 12px;font-size:.72rem;color:var(--ink-2);z-index:20;display:grid;grid-template-columns:auto auto;gap:4px 16px}
+.legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block;vertical-align:-1px;margin-right:6px}
+.legend b{font-weight:600;color:var(--ink-2)}
+.legend .sec{grid-column:1 / -1;margin-top:4px;padding-top:6px;border-top:1px solid var(--line-soft);font-weight:700;color:var(--ink-3);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* プランナー */
+.planner{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:min(860px,calc(100% - 24px));max-height:calc(100% - 40px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-raised);z-index:40;display:none;padding:14px 16px}
+.planner .ph{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.planner .ph h3{margin:0;font-size:1rem}
+.planner .ph .cl{margin-left:auto;background:none;border:1px solid var(--line);color:var(--ink-2);border-radius:8px;padding:4px 10px;cursor:pointer}
+.planner .stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.planner .stats .s{flex:1;min-width:110px;background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:8px 10px;text-align:center}
+.planner .stats .s b{display:block;font-size:1.15rem;color:var(--accent)}
+.planner .stats .s span{font-size:.68rem;color:var(--ink-3);letter-spacing:.05em}
+.planner .day{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;border:1px solid transparent}
+.planner .day.today{background:var(--accent-soft);border-color:var(--accent)}
+.planner .day .d{width:52px;flex-shrink:0;font-size:.78rem;font-weight:700;color:var(--ink-2)}
+.planner .day .nodes{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.planner .chip{font-size:.74rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);cursor:pointer}
+.planner .chip:hover{background:var(--accent-soft);border-color:var(--accent)}
+.planner .chip.exam{border-style:dashed;background:var(--violet-soft);border-color:var(--violet);color:var(--violet)}
+.planner .chip.exam:hover{background:var(--violet-soft);border-color:var(--violet);color:var(--violet)}
+.planner .chip .st{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:1px}
+.planner .day .note{flex-basis:100%;font-size:.7rem;color:var(--ink-3)}
+.planner .sum{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:.78rem;color:var(--ink-2)}
+.planner .af{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.planbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:4px 12px;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.planbtn:hover{background:var(--accent-soft);border-color:var(--accent)}
+
+/* プラン相談チャット */
+.chat{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.chat-head{font-size:.68rem;font-weight:700;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.chat-body{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding:10px;background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;margin-bottom:8px}
+.msg{max-width:82%;padding:7px 11px;border-radius:12px;font-size:.8rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.msg.user{align-self:flex-end;background:var(--accent);color:#fff}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line-soft);color:var(--ink)}
+.msg.sys{align-self:center;background:none;color:var(--ink-3);font-size:.7rem;max-width:100%}
+.chat-in{display:flex;gap:8px}
+.chat-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink);font-size:.8rem;outline:none}
+.chat-in input:focus{border-color:var(--accent)}
+.chat-in button{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:.8rem;cursor:pointer;flex-shrink:0}
+.chat-in button:hover{background:var(--accent-hover)}
+.chat-in button:disabled{opacity:.55;cursor:default}
+
+.mn-empty{font-size:.76rem;color:var(--ink-3);text-align:center;padding:14px 8px}
+
+/* 診断ゲート */
+.gate{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 24px));max-height:calc(100% - 40px);overflow:auto;background:var(--surface);border:1px solid var(--violet);border-radius:12px;box-shadow:var(--shadow-overlay);z-index:41;display:none;padding:14px 16px}
+.gate .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.gate .ph h3{margin:0;font-size:1rem}
+.gate .ph .cl{margin-left:auto;background:none;border:1px solid var(--line);color:var(--ink-2);border-radius:8px;padding:4px 10px;cursor:pointer}
+.gate .gd{font-size:.78rem;color:var(--ink-2);margin-bottom:12px}
+.gq{display:flex;flex-direction:column;gap:10px}
+.gq .it{background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px}
+.gq .it .q{font-size:.82rem;font-weight:600;margin-bottom:8px}
+.gq .it .qn{font-size:.66rem;font-weight:700;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+.gq .it .ans{display:none;font-size:.78rem;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:6px 9px;margin-top:6px}
+.gq .it .mark{display:flex;gap:8px;margin-top:8px}
+.gq .it .mk{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 0;text-align:center;font-size:.78rem;font-weight:600;cursor:pointer;background:var(--surface)}
+.gq .it .mk.ok:hover{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.gq .it .mk.ok.sel{background:var(--ok);border-color:var(--ok);color:#fff}
+.gq .it .mk.no:hover{background:var(--ng-soft);border-color:var(--ng);color:var(--ng)}
+.gq .it .mk.no.sel{background:var(--ng);border-color:var(--ng);color:#fff}
+.gate .gf{margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gate .gf .hint{font-size:.72rem;color:var(--ink-3);flex:1}
+.gate .rst{background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:12px;margin-top:10px}
+.gate .rst .rw{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:.82rem}
+.gate .rst .rw:last-child{border-bottom:none}
+.gate .rst .rw .st{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.gate .rst .rw.pass .st{background:var(--ok)}
+.gate .rst .rw.fail .st{background:var(--warn)}
+.gate .rst .rw .nm{flex:1;font-weight:600}
+.gate .rst .rw .sub{font-size:.72rem;color:var(--ink-3)}
+.gate .timer{font-variant-numeric:tabular-nums;font-size:.9rem;font-weight:700;color:var(--ng);background:var(--ng-soft);border-radius:8px;padding:3px 10px;margin-left:auto;margin-right:10px}
+.gate .stars2{font-size:.95rem;letter-spacing:.1em;color:var(--warn)}
+.gate .stars2 .off{opacity:.25}
+.gate .opts{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.gate .opts .opt{font-size:.76rem;color:var(--ink-2);background:var(--surface-subtle);border:1px solid var(--line-soft);border-radius:6px;padding:5px 9px}
+.gate .it .qcount{font-size:.68rem;color:var(--ink-3);margin-bottom:8px}
+.panel .qcount{font-size:.72rem;color:var(--violet);font-weight:700;margin:6px 0 2px}
+
+/* プラン構築 */
+.pb-cfg{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.pb-cfg .kv{font-size:.8rem;color:var(--ink-2)}
+.pb-cfg input{background:var(--surface-subtle);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--ink);font-family:inherit;font-size:.84rem;text-align:center}
+.pb-cfg input:focus{outline:none;border-color:var(--accent-focus)}
+.pb-sched{display:flex;flex-direction:column;gap:8px}
+.pb-day{background:var(--bg);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px}
+.pb-day .dn{font-size:.66rem;font-weight:700;color:var(--accent);letter-spacing:.06em;margin-bottom:4px}
+.pb-day .chip{display:inline-block;font-size:.74rem;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);margin:2px 3px 2px 0}
+.pb-day .dnote{font-size:.72rem;color:var(--ink-3);margin-top:4px}
+.pb-sum{margin-top:12px;background:var(--violet-soft);border:1px solid var(--violet);border-radius:10px;padding:10px 14px;font-size:.78rem;color:var(--ink)}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:.82rem;font-weight:600;box-shadow:var(--shadow-overlay);z-index:60;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.plan-create{position:absolute;top:10px;right:12px;z-index:10;height:32px;padding:0 13px;border-radius:99px;border:1px solid var(--violet);background:var(--violet-soft);color:var(--violet);font-family:inherit;font-size:.76rem;font-weight:700;cursor:pointer;box-shadow:var(--shadow-raised)}
+.plan-create:hover{filter:brightness(1.05)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="logo">学</span>study<b>SupportAI</b></div>
+  <nav class="nav">
+    <a class="item active" href="home.html">マップ</a>
+    <a class="item" href="materials.html">教材</a>
+    <a class="item" href="stats.html">統計</a>
+    <a class="item" href="settings.html">設定</a>
+  </nav>
+  <div class="spacer"></div>
+  <div class="pomo" title="ポモドーロ（25分集中 / 5分休憩）">
+    <span class="pt" id="pomoT">25:00</span>
+    <button class="pb" id="pomoB" onclick="pomoToggle()" title="開始 / 停止">▶</button>
+  </div>
+  <div class="streak" title="継続日数">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.5 3-1.5 4.5-2.8 6C7.4 10 5.5 12 5.5 15a6.5 6.5 0 0 0 13 0c0-2.2-1.2-4-2.6-5.5.2 1.4-.3 2.4-1 3.2.2-3.5-1.6-6.6-2.9-8.2C11 3.5 11 2.7 12 2z"/></svg>
+    継続 <b id="streak">12</b>日
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" title="テーマ切替" aria-label="テーマ切替">
+    <svg class="sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+</header>
+
+<!-- 今日のステージ・進捗・デッドライン -->
+<div class="dash">
+  <div class="today">
+    <div>
+      <div class="tk">Today's Stage</div>
+      <div class="nm" id="todayName">明反応の全体像</div>
+      <div class="day" id="todayDay">Day 2 ・ 演習 → クリア判定 ・ 目標 ●●</div>
+    </div>
+    <div class="go" onclick="centerOn('m1')">マップの現在地へ →</div>
+  </div>
+  <div class="prog">
+    <div class="bar"><i id="mapBar"></i></div>
+    <div class="lbl" id="mapProg"></div>
+  </div>
+  <div class="dl" id="dl"></div>
+  <div class="af2">
+    <button class="planbtn" onclick="togglePlan()" title="テスト逆算で日割りプラン">プラン</button>
+  </div>
+</div>
+
+<!-- メイン列: 今日やること + 3D マップ -->
+<div class="mainrow">
+  <aside class="taskbar">
+    <div class="tb-h"><span>今日やること</span><span class="cnt" id="tbCount"></span></div>
+    <div id="tbList"></div>
+  </aside>
+  <div class="viewport" id="viewport">
+  <div class="hint" id="hint">ドラッグで移動 ・ ホイールで拡大縮小 ・ ノードをクリックで詳細</div>
+  <button class="plan-create" onclick="location.href='materials.html'" title="教材ページで科目を追加すると、ここにプランが作成されます">＋ プランを作成</button>
+  <canvas id="cv"></canvas>
+
+  <!-- 詳細パネル -->
+  <div class="panel" id="panel" style="display:none;"></div>
+
+  <!-- プランナー（テスト逆算・日割り） -->
+  <div class="planner" id="planner">
+    <div class="ph">
+      <h3>学習プラン</h3>
+      <span class="cl" onclick="togglePlan()">閉じる</span>
+    </div>
+    <div class="stats" id="planStats"></div>
+    <div id="planDays"></div>
+    <div class="sum" id="planSum"></div>
+    <div class="af">
+      <button class="btn" onclick="askPlan()" id="aiplan">AIプラン提案</button>
+      <span style="font-size:.72rem;color:var(--ink-3)" id="planHint">基礎から順に消化し、合流後に復習を回すのがおすすめです。</span>
+    </div>
+    <div class="chat">
+      <div class="chat-head">プラン相談（AIと話し合い）</div>
+      <div class="chat-body" id="chatBody"></div>
+      <div class="chat-in">
+        <input id="chatIn" placeholder="例: 復習を優先したい / ペースを半分にしたい" autocomplete="off"
+          onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="chatSend" onclick="sendChat()">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- プラン構築（科目プラン → 具体的な日割り） -->
+  <div class="gate" id="planBuilder" style="display:none">
+    <div class="ph">
+      <h3 id="pbTitle">プランを構築</h3>
+      <span class="cl" onclick="closePlanBuilder()">閉じる</span>
+    </div>
+    <p class="gd" id="pbSub"></p>
+    <div class="pb-cfg">
+      <span class="kv">テストまで <input type="number" id="pbDays" min="1" max="90" value="14" style="width:64px"> 日</span>
+      <button class="btn primary" id="pbBuild" onclick="buildPlan()">AIで組み立てる</button>
+    </div>
+    <div class="pb-sched" id="pbSched"></div>
+  </div>
+
+  <!-- 診断ゲート（フェーズ8） -->
+  <div class="gate" id="gate" style="display:none">
+    <div class="ph">
+      <h3 id="gateTitle">診断ゲート</h3>
+      <span class="cl" onclick="gateClose()">閉じる</span>
+    </div>
+    <p class="gd" id="gateDesc"></p>
+    <div class="gq" id="gateQ"></div>
+    <div class="gf" id="gateFoot"></div>
+  </div>
+
+  <!-- ボスステージ（時間制限テスト） -->
+  <div class="gate" id="boss" style="display:none">
+    <div class="ph">
+      <h3 id="bossTitle">ボスステージ</h3>
+      <span class="timer" id="bossTimer">5:00</span>
+      <span class="cl" onclick="bossClose()">閉じる</span>
+    </div>
+    <p class="gd" id="bossDesc"></p>
+    <div class="gq" id="bossQ"></div>
+    <div class="gf" id="bossFoot"></div>
+  </div>
+
+  <div class="zc">
+    <button class="b" onclick="zoomBy(1.25)" title="拡大">+</button>
+    <button class="b" onclick="zoomBy(0.8)" title="縮小">−</button>
+    <button class="b" onclick="resetView()" title="全体表示">⤢</button>
+  </div>
+
+  <div class="legend">
+    <div><span class="dot" style="background:var(--ok)"></span><b>できる</b></div>
+    <div><span class="dot" style="background:var(--warn)"></span><b>怪しい</b></div>
+    <div><span class="dot" style="background:var(--ng)"></span><b>わからない</b></div>
+    <div><span class="dot" style="background:var(--accent)"></span><b>進行中</b></div>
+    <div><span class="dot" style="background:var(--line-soft)"></span><b>未着手</b></div>
+    <div><span class="dot" style="background:transparent;border:1px dashed var(--line)"></span><b>ロック</b></div>
+    <div class="sec">ステージ</div>
+    <div><span class="dot" style="background:var(--violet)"></span><b>診断ゲート</b></div>
+    <div><span class="dot" style="background:var(--warn);border:1px dashed var(--warn)"></span><b>補強ブランチ</b></div>
+    <div><span class="dot" style="background:var(--accent);opacity:.6"></span><b>ボス</b></div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="nodes.js"></script>
+<script src="srs.js"></script>
+<script src="quiz.js"></script>
+<script>
+window.addEventListener('error',function(e){
+  var d=document.getElementById('errbar');
+  if(!d){ d=document.createElement('div'); d.id='errbar'; d.style.cssText='position:fixed;left:0;right:0;top:0;background:#de350b;color:#fff;padding:8px 16px;z-index:99999;font-size:12px;font-family:monospace;white-space:pre-wrap'; document.body.appendChild(d); }
+  d.textContent='JS エラー: '+(e.message||'')+(e.lineno?(' @ '+(e.filename||'').split('/').pop()+':'+e.lineno):'');
+});
+window.addEventListener('unhandledrejection',function(e){
+  var msg=(e.reason&&(e.reason.message||e.reason))||'unhandled rejection';
+  var d=document.getElementById('errbar');
+  if(!d){ d=document.createElement('div'); d.id='errbar'; d.style.cssText='position:fixed;left:0;right:0;top:0;background:#de350b;color:#fff;padding:8px 16px;z-index:99999;font-size:12px;font-family:monospace;white-space:pre-wrap'; document.body.appendChild(d); }
+  d.textContent='JS エラー: '+msg;
+});
+/* ============ テーマ ============ */
+function toggleTheme(){
+  var r=document.documentElement;
+  r.dataset.theme=r.dataset.theme==='dark'?'light':'dark';
+  readPalette();
+}
+
+/* ============ ナビ ============ */
+function navTo(name){
+  if(name==='統計'){ location.href='stats.html'; return false; }
+  if(name==='教材'){ location.href='materials.html'; return false; }
+  const ph={設定:'フェーズ9',学習:'フェーズ2',復習:'フェーズ3',ノート:'フェーズ4',プランナー:'フェーズ5','3つの箱':'フェーズ7',習慣:'フェーズ7',AI:'フェーズ6'};
+  toast(name+'は未実装です（'+(ph[name]||'次のフェーズ')+'で作成予定）');
+  return false;
+}
+
+/* ============ ポモドーロ ============ */
+let pomoLeft=25*60, pomoOn=false, pomoTimer=null;
+function pomoFormat(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0'); }
+function updatePomo(){
+  document.getElementById('pomoT').textContent=pomoFormat(pomoLeft);
+  document.getElementById('pomoB').textContent=pomoOn?'II':'▶';
+}
+function pomoToggle(){
+  if(pomoOn){ pomoOn=false; clearInterval(pomoTimer); }
+  else{
+    if(pomoLeft<=0) pomoLeft=25*60;
+    pomoOn=true; pomoTimer=setInterval(()=>{
+      pomoLeft--;
+      if(pomoLeft<=0){ pomoLeft=0; pomoOn=false; clearInterval(pomoTimer); toast('ポモドーロ終了！5分休憩をどうぞ'); }
+      updatePomo();
+    },1000);
+  }
+  updatePomo();
+}
+
+/* ============ 定数・データ (nodes.js) ============ */
+const NODES=createNodes();
+const MEMO = {
+  yellow:'AI提案: 「水の分解 → 酸素が発生」を“発泡スプレー”のイメージで。2H₂O → O₂ + 4H⁺ + 4e⁻ の「2→1酸素」を押さえると覚えやすい。',
+  red:'AI提案: 水の分解は「光で水が割れる」とだけ覚える。化学式は補強後に暗記特化ブランチで反復。',
+};
+
+const nodeById = Object.fromEntries(NODES.map(n=>[n.id,n]));
+const PLAN_NODES=[];
+let planNodeById={};
+const ITEM_NODES=[];
+let itemNodeById={};
+function getNode(id){ return nodeById[id]||planNodeById[id]||itemNodeById[id]; }
+function loadItemState(){
+  try{ return JSON.parse(localStorage.getItem('planItems')||'{}'); }catch(e){ return {}; }
+}
+function saveItemState(){
+  const o={};
+  ITEM_NODES.forEach(n=>{ o[n.id]={state:n.state,stars:n.stars}; });
+  try{ localStorage.setItem('planItems',JSON.stringify(o)); }catch(e){}
+}
+async function loadPlans(){
+  PLAN_NODES.length=0;
+  ITEM_NODES.length=0;
+  let plans=[];
+  try{
+    await resolveApiBase();
+    const res=await fetch(API_BASE+'/api/plans',{signal:AbortSignal.timeout(5000)});
+    if(res.ok) plans=await res.json();
+  }catch(e){}
+  const saved=loadItemState();
+  plans.forEach((c,i)=>{
+    const band=90+i*210;
+    PLAN_NODES.push({id:'plan_'+c.id,zone:'P',type:'plan',name:c.name,
+      x:60,z:band,w:210,h:58,
+      state:'unlocked',planId:c.id,courseId:c.course_id,
+      material_count:c.material_count||0,pstatus:c.status||'empty',built_count:c.built_count||0});
+    const pid='plan_'+c.id;
+    const probs=c.problems||{};
+    (c.nodes||[]).forEach((nd,j)=>{
+      const nid=pid+'_'+nd.id;
+      const st=saved[nid];
+      const froms=(nd.from||[]).map(f=>pid+'_'+f);
+      ITEM_NODES.push({id:nid,zone:'P',type:nd.type||'basic',name:nd.name||'ノード',
+        x:350+(j%8)*250,z:band+28+Math.floor(j/8)*122,w:210,h:64,
+        state:(st&&st.state)||'unlocked',stars:(st&&st.stars)||0,
+        planId:c.id,planName:c.name,day:nd.day||1,
+        content:nd.content||'',from:froms,problems:probs[nd.id]||[]});
+    });
+  });
+  itemNodeById=Object.fromEntries(ITEM_NODES.map(n=>[n.id,n]));
+}
+
+/* ============ 今日やること（優先順位キュー） ============ */
+const REVIEW = {
+  b1:{due:3,total:12}, b2:{due:2,total:11}, b3:{due:5,total:9},
+  br1:{due:4,total:8}, d1:{due:1,total:10}, m1:{due:0,total:6},
+};
+const doneSet=new Set();
+let queueByKey={};
+
+function buildTodayQueue(){
+  const q=[];
+  /* ① 期限切れ / 今日期限の復習（件数多い順） */
+  NODES.forEach(n=>{
+    const due=SRS.dueCount(n.id);
+    if(due>0) q.push({key:'r:'+n.id,kind:'review',node:n,label:'復習',desc:`期限 ${due}枚の復習`,act:'復習を開始'});
+  });
+  q.sort((a,b)=>(SRS.dueCount(b.node.id)||0)-(SRS.dueCount(a.node.id)||0));
+  /* ② 今日のノード（進行中）の Day タスク */
+  const today=NODES.find(n=>n.today && n.state!=='green');
+  if(today) q.push({key:'s:today',kind:'study',node:today,label:'今日のノード',desc:`Day ${today.day||1} ・ 演習 → クリア判定`,act:'Day '+(today.day||1)+' を続行'});
+  /* ③ 補強が必要（黄/赤）＋ 待機中の診断ゲート */
+  NODES.forEach(n=>{
+    if(n.state==='yellow'||n.state==='red') q.push({key:'b:'+n.id,kind:'boost',node:n,label:'補強',desc:'補強ブランチで弱点を補強',act:'補強ブランチを開始'});
+  });
+  NODES.forEach(n=>{
+    if(n.type==='gate' && (n.state==='unlocked'||n.state==='in_progress')) q.push({key:'g:'+n.id,kind:'dg',node:n,label:'診断',desc:'前提から混合問題で弱点を検出',act:'診断ゲートを実行'});
+  });
+  /* ④ 解放済みで未着手 */
+  NODES.forEach(n=>{
+    if(n.state==='unlocked' && n.type!=='gate') q.push({key:'u:'+n.id,kind:'study',node:n,label:'新規',desc:'Day 1 ・ 発見 → 理解チェック → なぜ3つ',act:'Day 1 を開始'});
+  });
+  /* ⑤ 計画分の残り */
+  const remaining=NODES.filter(n=>n.state!=='green').length;
+  q.push({key:'plan',kind:'plan',node:null,label:'計画',desc:`テストまで ${TEST_DAYS}日 ・ 残り${remaining}ノード`,act:'プランを確認'});
+  queueByKey={}; q.forEach(it=>{ queueByKey[it.key]=it; });
+  return q;
+}
+
+function renderTaskbar(){
+  const list=document.getElementById('tbList');
+  const q=buildTodayQueue();
+  document.getElementById('tbCount').textContent=q.length+'件';
+  if(!q.length){ list.innerHTML='<div class="tb-empty">今日はやることがありません。<br>お疲れさまでした！</div>'; return; }
+  let html='', i=0;
+  q.forEach(it=>{
+    i++;
+    const d=doneSet.has(it.key)?' done':'';
+    const numCls={review:'k-review',study:'k-study',dg:'k-dg',boost:'k-boost',plan:'k-plan'}[it.kind];
+    const bCls={review:'b-review',study:'b-study',dg:'b-dg',boost:'b-boost',plan:'b-plan'}[it.kind];
+    html+=`<div class="titem${d}" onclick="doStart('${it.key}')">
+      <div class="tnum ${numCls}">${i}</div>
+      <div class="tbd">
+        <span class="tbadge ${bCls}">${it.label}</span>
+        <div class="tname">${it.node?it.node.name:it.desc}</div>
+        ${it.node?`<div class="tdesc">${it.desc}</div>`:''}
+      </div>
+      <div class="tcheck" title="完了チェック" onclick="event.stopPropagation();toggleDone('${it.key}')">✓</div>
+    </div>`;
+  });
+  list.innerHTML=html;
+}
+
+function goStudy(id,day){ location.href='study.html?n='+id+'&d='+day; }
+function goReview(id){ location.href='review.html?n='+id; }
+function seedReviews(){
+  Object.keys(REVIEW).forEach(id=>{
+    const r=REVIEW[id];
+    SRS.ensure(id,r.total,r.due);
+  });
+}
+
+function doStart(key){
+  const it=queueByKey[key];
+  if(!it) return;
+  if(it.kind==='review'){ goReview(it.node.id); return; }
+  if(it.kind==='study'||it.kind==='boost'){
+    const day=(it.node.state==='in_progress'||it.node.state==='yellow'||it.node.state==='red')?(it.node.day||1):1;
+    goStudy(it.node.id,day);
+    return;
+  }
+  if(it.node){
+    centerOn(it.node.id);
+    selectNode(it.node.id);
+    toast(`「${it.node.name}」: ${it.act}（モック）`);
+  }else{
+    toast(it.act+'（モック）');
+  }
+}
+function toggleDone(key){
+  if(doneSet.has(key)) doneSet.delete(key); else doneSet.add(key);
+  renderTaskbar();
+}
+
+/* ============ プランナー（テスト逆算・日割り） ============ */
+let API_BASE='';
+async function resolveApiBase(){
+  if(API_BASE) return;
+  try{
+    const r=await fetch('/api/health',{signal:AbortSignal.timeout(1000)});
+    if(r.ok){ API_BASE=''; return; }
+  }catch(e){}
+  const cands=['http://'+location.hostname+':8000','http://localhost:8000'];
+  for(const c of cands){
+    try{
+      const r=await fetch(c+'/api/health',{signal:AbortSignal.timeout(1500)});
+      if(r.ok){ API_BASE=c; return; }
+    }catch(e){}
+  }
+  API_BASE=cands[0];
+}
+async function aiCall(path,body){
+  const res=await fetch(API_BASE+'/api/ai/'+path,{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),
+    signal:AbortSignal.timeout(60000),
+  });
+  if(!res.ok) throw new Error('http '+res.status);
+  return res.json();
+}
+function nodeByName(name){ return NODES.find(n=>n.name===name)||null; }
+let PAST_EXAMS=[];
+async function loadPastExams(){
+  try{
+    await resolveApiBase();
+    const res=await fetch(API_BASE+'/api/materials?kind=past_exam',{signal:AbortSignal.timeout(5000)});
+    if(res.ok){ const list=await res.json(); PAST_EXAMS=list.filter(m=>m.status==='ready'); }
+    else{ PAST_EXAMS=[]; }
+  }catch(e){ PAST_EXAMS=[]; }
+}
+function makeItem(name){
+  const n=nodeByName(name);
+  if(n) return n;
+  const m=PAST_EXAMS.find(x=>name.indexOf(x.title)>=0 || name.indexOf((x.year||'')+(x.exam_type||''))>=0);
+  return {exam:true,id:m?m.id:null,label:name};
+}
+function chipHTML(it){
+  if(it.exam){
+    return `<span class="chip exam" title="過去問演習" onclick="openExam(${it.id})"><span class="st" style="background:var(--violet)"></span>${it.label}</span>`;
+  }
+  const st=STATE_DOT[it.state]||STATE_DOT.unlocked;
+  return `<span class="chip" title="${(TYPE_LABEL[it.type]||'')}・${STATE_LABEL[it.state]||''}" onclick="selectNode('${it.id}')"><span class="st" style="background:${st}"></span>${it.name}</span>`;
+}
+function openExam(id){
+  location.href=id?'material_view.html?m='+id:'materials.html';
+}
+async function syncTestDate(){
+  try{
+    await resolveApiBase();
+    const res=await fetch(API_BASE+'/api/settings',{signal:AbortSignal.timeout(5000)});
+    if(res.ok){
+      const s=await res.json();
+      if(s.test_date){
+        const t=new Date(s.test_date), now=new Date();
+        t.setHours(0,0,0,0); now.setHours(0,0,0,0);
+        const days=Math.max(1,Math.round((t-now)/86400000));
+        if(isFinite(days)&&days>0){ TEST_DAYS=days; }
+      }
+    }
+  }catch(e){}
+  updateStats();
+  renderTaskbar();
+}
+function plannerTodo(){ return NODES.filter(n=>n.state!=='green'); }
+function buildSchedule(){
+  const cands=plannerTodo();
+  cands.sort((a,b)=>{
+    const pa=(a.today?0:1), pb=(b.today?0:1);
+    if(pa!==pb) return pa-pb;
+    return nodeDepth(a)-nodeDepth(b);
+  });
+  const todo=cands.length, days=TEST_DAYS;
+  const pace=Math.max(1,Math.ceil(todo/days));
+  const rows=[];
+  for(let d=1; d<=days; d++){
+    const chunk=cands.slice((d-1)*pace, d*pace);
+    rows.push({day:d, nodes:chunk, note:''});
+    if(chunk.length===0) break;
+  }
+  if(PAST_EXAMS.length){
+    const ex=PAST_EXAMS[0];
+    const label='過去問演習: '+ex.title+(ex.year?(' ('+ex.year+')'):'');
+    rows.push({day:rows.length+1, nodes:[{exam:true,id:ex.id,label}], note:'テスト直前の仕上げとして本番形式で解きます。'});
+  }
+  return {rows, todo, days, pace};
+}
+const STATE_DOT={green:'var(--ok)',yellow:'var(--warn)',red:'var(--ng)',in_progress:'var(--accent)',unlocked:'var(--line-soft)',locked:'var(--line)'};
+function renderPlan(rows, summary){
+  const st=document.getElementById('planStats');
+  const todo=plannerTodo().length;
+  const days=TEST_DAYS;
+  const pace=Math.max(1,Math.ceil(todo/days));
+  st.innerHTML=
+    `<div class="s"><b>${todo}</b><span>未クリア ノード</span></div>`+
+    `<div class="s"><b>${days}</b><span>テストまで 日数</span></div>`+
+    `<div class="s"><b>${pace}/日</b><span>必要ペース</span></div>`+
+    `<div class="s"><b>${NODES.filter(n=>n.state==='green').length}/${NODES.length}</b><span>クリア済み</span></div>`;
+  let html='';
+  rows.forEach(r=>{
+    const today=(r.day===1);
+    const chips=r.nodes.map(it=>chipHTML(it)).join('');
+    html+=`<div class="day${today?' today':''}">
+      <div class="d">Day ${r.day}${today?' (今日)':''}</div>
+      <div class="nodes">${chips||'<span class="chip" style="cursor:default">復習・余白</span>'}</div>
+      ${r.note?`<div class="note">${r.note}</div>`:''}
+    </div>`;
+  });
+  document.getElementById('planDays').innerHTML=html;
+  document.getElementById('planSum').textContent=summary||'';
+}
+function togglePlan(){
+  const p=document.getElementById('planner');
+  if(p.style.display==='block'){ p.style.display='none'; return; }
+  resetChat();
+  loadPastExams().then(()=>{
+    const {rows}=buildSchedule();
+    renderPlan(rows,'');
+  });
+  const {rows}=buildSchedule();
+  renderPlan(rows,'');
+  document.getElementById('planSum').textContent='自動配分です。AIプラン提案や「プラン相談」で優先順位や分量を調整できます。';
+  p.style.display='block';
+}
+
+/* --- プラン相談チャット --- */
+let chatHistory=[];
+function appendChat(kind,text){
+  const b=document.getElementById('chatBody');
+  const d=document.createElement('div');
+  d.className='msg '+kind;
+  d.textContent=text;
+  b.appendChild(d);
+  b.scrollTop=b.scrollHeight;
+}
+function resetChat(){
+  chatHistory=[];
+  document.getElementById('chatBody').innerHTML='';
+  appendChat('ai','こんにちは！テストまで '+TEST_DAYS+' 日、未クリア '+plannerTodo().length+' ノードの日割りを提案しています。ペース・優先順位・復習のタイミングなど、希望を話してください。');
+}
+async function sendChat(){
+  const inp=document.getElementById('chatIn');
+  const text=inp.value.trim();
+  if(!text) return;
+  inp.value='';
+  const btn=document.getElementById('chatSend');
+  btn.disabled=true;
+  appendChat('user',text);
+  chatHistory.push({role:'user',content:text});
+  try{
+    await resolveApiBase();
+    const nodes=plannerTodo().map(n=>({name:n.name,type:n.type,state:n.state}));
+    const materials=PAST_EXAMS.map(m=>({title:m.title,year:m.year||'',exam_type:m.exam_type||''}));
+    const d=await aiCall('plan_chat',{test_days:TEST_DAYS,nodes,materials,history:chatHistory});
+    const msg=d.message||'（返信なし）';
+    appendChat('ai',msg);
+    chatHistory.push({role:'assistant',content:msg});
+    if(d.plan&&d.plan.length){
+      const rows=d.plan.map(x=>({day:Number(x.day)||0,nodes:(x.nodes||[]).map(name=>makeItem(name)).filter(Boolean),note:x.note||''})).filter(r=>r.day>0);
+      renderPlan(rows.length?rows:buildSchedule().rows,d.summary||'');
+      appendChat('sys','プランを更新しました。上の日割り表を確認してください。');
+    }
+  }catch(err){
+    appendChat('sys','AI と接続できませんでした: '+(err.message||err));
+  }
+  btn.disabled=false;
+  document.getElementById('chatIn').focus();
+}
+async function askPlan(){
+  const btn=document.getElementById('aiplan');
+  btn.disabled=true; btn.textContent='提案中…';
+  try{
+    await resolveApiBase();
+    const nodes=plannerTodo().map(n=>({name:n.name,type:n.type,state:n.state}));
+    const materials=PAST_EXAMS.map(m=>({title:m.title,year:m.year||'',exam_type:m.exam_type||''}));
+    const d=await aiCall('plan',{test_days:TEST_DAYS, nodes, materials});
+    const rows=(d.plan||[]).map(x=>({
+      day:Number(x.day)||0,
+      nodes:(x.nodes||[]).map(name=>makeItem(name)).filter(Boolean),
+      note:x.note||'',
+    })).filter(r=>r.day>0);
+    renderPlan(rows.length?rows:buildSchedule().rows, d.summary||'');
+  }catch(err){
+    toast('AI プラン提案に失敗しました: '+(err.message||err));
+  }
+  btn.disabled=false; btn.textContent='AIプラン提案';
+}
+
+/* ============ プラン構築（科目プラン → 具体的な日割り） ============ */
+let curPlan=null;
+function openPlanBuilder(id){
+  curPlan=id;
+  const n=Object.values(planNodeById).find(x=>x.planId===id);
+  document.getElementById('pbTitle').textContent=(n?n.name:'プラン')+' ・ 具体的なプランを構築';
+  document.getElementById('pbSub').textContent=(n?`${n.material_count} 件の教材`:'')+'から、テスト日までにやることを日割りで組み立てます。';
+  document.getElementById('pbDays').value='14';
+  document.getElementById('pbSched').innerHTML='<div class="hint" style="font-size:.76rem;color:var(--ink-3)">「AIで組み立てる」を押すと、教材から日割りプランを作成します。</div>';
+  const btn=document.getElementById('pbBuild');
+  btn.disabled=false; btn.textContent='AIで組み立てる';
+  document.getElementById('planBuilder').style.display='block';
+}
+function closePlanBuilder(){
+  document.getElementById('planBuilder').style.display='none';
+  curPlan=null;
+}
+async function buildPlan(){
+  const btn=document.getElementById('pbBuild');
+  btn.disabled=true; btn.textContent='組み立て中…';
+  try{
+    await resolveApiBase();
+    if(!curPlan) throw new Error('プランが選択されていません（教材ページからプランを開いてください）');
+    const days=Math.max(1,Math.min(90,parseInt(document.getElementById('pbDays').value||'14',10)));
+    const res=await fetch(API_BASE+'/api/plans/'+curPlan+'/build',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({test_days:days}),signal:AbortSignal.timeout(290000),
+    });
+    if(!res.ok){ let msg='http '+res.status; try{ const j=await res.json(); msg=(j.detail&&typeof j.detail==='string')?j.detail:msg; }catch(e){} throw new Error(msg); }
+    const p=await res.json();
+    const daysHtml=(p.days||[]).map(d=>`
+      <div class="pb-day"><div class="dn">Day ${d.day}</div>
+        <div>${(d.nodes||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join(' ')||'<span style="font-size:.72rem;color:var(--ink-3)">自由学習</span>'}</div>
+        ${d.note?`<div class="dnote">${esc(d.note)}</div>`:''}
+      </div>`).join('');
+    document.getElementById('pbSched').innerHTML=daysHtml+(p.summary?`<div class="pb-sum">${esc(p.summary)}</div>`:'');
+    toast('プランを構築しました（'+((p.days||[]).length)+'日分）');
+    await loadPlans();
+    draw();
+  }catch(err){
+    toast('プランの構築に失敗しました: '+(err.message||err));
+  }
+  btn.disabled=false; btn.textContent='AIで組み立てる';
+}
+
+/* ============ 状態の永続化（localStorage） ============ */
+function saveMapState(){
+  try{
+    const st={}; NODES.forEach(n=>{ st[n.id]={state:n.state,stars:n.stars,day:n.day}; });
+    localStorage.setItem('mapState',JSON.stringify(st));
+    localStorage.setItem('mapNodes',JSON.stringify(NODES.map(n=>({id:n.id,name:n.name,type:n.type,zone:n.zone}))));
+  }catch(e){}
+}
+function loadMapState(){
+  try{
+    const st=JSON.parse(localStorage.getItem('mapState')||'null');
+    if(!st) return;
+    NODES.forEach(n=>{ const s=st[n.id]; if(s){ if(s.state)n.state=s.state; if(s.stars!=null)n.stars=s.stars; if(s.day)n.day=s.day; } });
+  }catch(e){}
+}
+
+/* ============ パレット（CSS変数を読み取り） ============ */
+let P={};
+function parseHex(h){
+  h=String(h).replace('#','');
+  if(h.length===3) h=h.split('').map(c=>c+c).join('');
+  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
+}
+function rgba(h,a){const r=parseHex(h);return `rgba(${r[0]},${r[1]},${r[2]},${a})`;}
+function mixh(a,b,t){const A=parseHex(a),B=parseHex(b);const f=i=>Math.round(A[i]+(B[i]-A[i])*t);return `rgb(${f(0)},${f(1)},${f(2)})`;}
+function shade(h,f){const r=parseHex(h);if(isNaN(r[0]))return h;const c=v=>Math.max(0,Math.min(255,Math.round(v)));return `rgb(${c(r[0]*f)},${c(r[1]*f)},${c(r[2]*f)})`;}
+function readPalette(){
+  const gs=getComputedStyle(document.documentElement);
+  const get=k=>gs.getPropertyValue(k).trim();
+  P={
+    bg:get('--bg'),surface:get('--surface'),ink:get('--ink'),ink2:get('--ink-2'),ink3:get('--ink-3'),
+    line:get('--line'),lineSoft:get('--line-soft'),
+    accent:get('--accent'),accentHover:get('--accent-hover'),accentFocus:get('--accent-focus'),accentSoft:get('--accent-soft'),
+    ok:get('--ok'),okSoft:get('--ok-soft'),warn:get('--warn'),warnSoft:get('--warn-soft'),
+    ng:get('--ng'),ngSoft:get('--ng-soft'),violet:get('--violet'),violetSoft:get('--violet-soft'),
+  };
+}
+readPalette();
+
+/* ============ カメラ・キャンバス ============ */
+let scale=1,tx=0,ty=0;
+let th=RX*Math.PI/180,sc=Math.cos(th),sw=Math.sin(th);
+const viewport=document.getElementById('viewport');
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let vw=0,vh=0,dpr=1;
+function resize(){
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  vw=viewport.clientWidth; vh=viewport.clientHeight;
+  cv.width=Math.max(1,Math.round(vw*dpr));
+  cv.height=Math.max(1,Math.round(vh*dpr));
+  cv.style.width=vw+'px'; cv.style.height=vh+'px';
+}
+
+function proj(x,y,z){
+  const xc=x-W/2, zc=z-H/2;
+  const xr=xc*cg+zc*sg, zr=-xc*sg+zc*cg;
+  const y1=y*sc+zr*sw;
+  const z1=-y*sw+zr*sc;
+  const f=PERSP/(PERSP-z1);
+  return {x:tx+xr*f*scale, y:ty+y1*f*scale, f:f};
+}
+function proj0(x,y,z,s){
+  const xc=x-W/2, zc=z-H/2;
+  const xr=xc*cg+zc*sg, zr=-xc*sg+zc*cg;
+  const y1=y*sc+zr*sw;
+  const z1=-y*sw+zr*sc;
+  const f=PERSP/(PERSP-z1);
+  return {x:xr*f*s, y:y1*f*s, f:f};
+}
+function camZ(x,y,z){
+  const xc=x-W/2, zc=z-H/2;
+  const zr=-xc*sg+zc*cg;
+  return -y*sw+zr*sc;
+}
+
+function rr(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function pointInQuad(px,py,a,b,c,d){
+  const cr=(a,b)=>((b.x-a.x)*(py-a.y)-(b.y-a.y)*(px-a.x));
+  const s1=cr(a,b),s2=cr(b,c),s3=cr(c,d),s4=cr(d,a);
+  return (s1>=0&&s2>=0&&s3>=0&&s4>=0)||(s1<=0&&s2<=0&&s3<=0&&s4<=0);
+}
+
+/* ============ ノードの見た目 ============ */
+function nodeStyle(n){
+  const s={};
+  if(n.state==='locked'){
+    s.fill=mixh(P.ink,P.bg,0.75); s.border=mixh(P.ink,P.bg,0.55); s.borderW=1.5; s.dash=true;
+    s.kicker=P.ink3; s.name=P.ink3; s.starOn=P.ink3; s.starOff=P.ink3; s.grad=false;
+    return s;
+  }
+  if(n.type==='boss'){
+    s.grad=true; s.fill=P.accent; s.border='transparent'; s.borderW=0;
+    s.kicker='rgba(255,255,255,0.8)'; s.name='#ffffff';
+    s.starOn='#ffffff'; s.starOff='rgba(255,255,255,0.45)';
+    return s;
+  }
+  switch(n.state){
+    case 'green': s.fill=P.okSoft; s.border=mixh(P.ok,P.line,0.55); break;
+    case 'yellow': s.fill=P.warnSoft; s.border=mixh(P.warn,P.line,0.60); break;
+    case 'red': s.fill=P.ngSoft; s.border=mixh(P.ng,P.line,0.55); break;
+    case 'in_progress': s.fill=P.accentSoft; s.border=P.accent; break;
+    default: s.fill=P.surface; s.border=P.line; break;
+  }
+  s.borderW=1.5; s.dash=false; s.grad=false;
+  s.kicker=P.ink3; s.name=P.ink; s.starOn=P.accent; s.starOff=rgba(P.line,0.8);
+  if(n.type==='branch'){ s.fill=P.warnSoft; s.border=P.warn; s.dash=true; s.kicker=P.warn; }
+  if(n.type==='gate'){ s.fill=P.violetSoft; s.border=P.violet; s.borderW=2; s.dash=false; s.kicker=P.violet; }
+  if(n.type==='merge'){ s.border=P.accent; s.borderW=2; s.kicker=P.accent; }
+  if(n.type==='discovery'){ s.border=P.accentFocus; }
+  if(n.type==='application'){ s.border=P.accentFocus; s.kicker=P.accentFocus; }
+  if(n.type==='plan'){ s.fill=P.violetSoft; s.border=P.violet; s.borderW=2; s.dash=false; s.kicker=P.violet; }
+  if(n.zone==='P'&&n.type!=='plan'){ s.border=P.violet; s.kicker=P.violet; }
+  return s;
+}
+function badgeStyle(n){
+  if(n.type==='plan') return {text:n.pstatus==='draft'?'構築済み':'中身なし', bg:n.pstatus==='draft'?P.ok:P.violet, fg:'#fff'};
+  if(n.type==='gate') return {text:n.state==='green'?'通過済み':(n.state==='locked'?'ロック':'診断ゲート'), bg:P.violet, fg:'#fff'};
+  const m={
+    green:[P.ok,'#fff'], yellow:[P.warn,'#fff'], red:[P.ng,'#fff'],
+    in_progress:[P.accent,'#fff'], unlocked:[P.lineSoft,P.ink2],
+  };
+  const c=m[n.state]||[P.lineSoft,P.ink2];
+  return {text:STATE_LABEL[n.state],bg:c[0],fg:c[1]};
+}
+
+/* ============ エッジ（直線クリップ） ============ */
+function axisRange(d,start,center,ext){
+  if(Math.abs(d)<1e-9) return (center-ext<=start&&start<=center+ext)?[0,1]:[NaN,NaN];
+  const t1=(center-ext-start)/d, t2=(center+ext-start)/d;
+  return [Math.min(t1,t2),Math.max(t1,t2)];
+}
+function edgeClip(a,b){
+  const dx=b.x-a.x, dz=b.z-a.z, len=Math.hypot(dx,dz);
+  if(len<1e-6) return null;
+  const M=6;
+  const rx=axisRange(dx,a.x,a.x,a.w/2), rz=axisRange(dz,a.z,a.z,a.h/2);
+  const exitA=Math.min(rx[1],rz[1]);
+  const bx=axisRange(dx,a.x,b.x,b.w/2), bz=axisRange(dz,a.z,b.z,b.h/2);
+  const enterB=Math.max(bx[0],bz[0]);
+  let t0=exitA+M/len, t1=enterB-M/len;
+  if(t1<t0){const m=(t0+t1)/2;t0=m;t1=m;}
+  if(t1<=0||t0>=1) return null;
+  return {x0:a.x+dx*t0,z0:a.z+dz*t0,x1:a.x+dx*t1,z1:a.z+dz*t1};
+}
+
+/* ============ 描画 ============ */
+let hoverId=null;
+
+function wall(p0,p1,p2,p3,color){
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.lineTo(p3.x,p3.y);
+  ctx.closePath();
+  ctx.fill();
+}
+function wallShades(n){
+  if(n.state==='locked') return [mixh(P.ink,P.bg,0.45), mixh(P.ink,P.bg,0.62)];
+  if(n.type==='boss') return [shade(P.accentHover,0.7), P.accentHover];
+  if(n.type==='gate') return [mixh(P.violet,P.violetSoft,0.15), mixh(P.violet,P.violetSoft,0.38)];
+  if(n.type==='plan') return [mixh(P.violet,P.violetSoft,0.15), mixh(P.violet,P.violetSoft,0.38)];
+  const m={green:[P.ok,P.okSoft],yellow:[P.warn,P.warnSoft],red:[P.ng,P.ngSoft],in_progress:[P.accent,P.accentSoft]};
+  const c=m[n.state];
+  if(c) return [mixh(c[0],c[1],0.15), mixh(c[0],c[1],0.38)];
+  return [mixh(P.ink,P.surface,0.45), mixh(P.ink,P.surface,0.70)];
+}
+
+function drawZones(){
+  ZONES.forEach(zo=>{
+    const pts=[[zo.x,zo.y],[zo.x+zo.w,zo.y],[zo.x+zo.w,zo.y+zo.h],[zo.x,zo.y+zo.h]]
+      .map(([x,z])=>proj(x,0,z));
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<4;i++) ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle=rgba(zo.locked?P.ink:P.accent, zo.locked?0.02:0.04);
+    ctx.fill();
+    ctx.strokeStyle=P.line; ctx.lineWidth=1.5;
+    ctx.setLineDash([7,7]); ctx.stroke(); ctx.setLineDash([]);
+    const nw=proj(zo.x,0,zo.y), ne=proj(zo.x+zo.w,0,zo.y), sw=proj(zo.x,0,zo.y+zo.h);
+    const ux=(ne.x-nw.x)/zo.w, uy=(ne.y-nw.y)/zo.w;
+    const vx=(sw.x-nw.x)/zo.h, vy=(sw.y-nw.y)/zo.h;
+    ctx.save();
+    ctx.transform(ux,uy,vx,vy,nw.x,nw.y);
+    ctx.font='700 15px "Space Grotesk",Inter,sans-serif';
+    ctx.fillStyle=rgba(P.ink3,zo.locked?0.7:1);
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    let x=26;
+    for(const ch of zo.name){ ctx.fillText(ch,x,44); x+=ctx.measureText(ch).width+1.5; }
+    if(zo.name==='プラン' && PLAN_NODES.length===0){
+      ctx.font='600 13px Inter,sans-serif';
+      ctx.fillStyle=rgba(P.ink3,0.9);
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('教材で科目を追加すると、ここにプランが作成されます',zo.w/2,zo.h-36);
+      ctx.textAlign='left';
+    }
+    ctx.restore();
+  });
+}
+
+function drawEdges(t){
+  const list=[];
+  NODES.forEach(n=>{
+    if(!n.from) return;
+    n.from.forEach(fid=>{
+      const s=nodeById[fid]; if(!s) return;
+      const e=edgeClip(s,n); if(!e) return;
+      list.push({a:s,b:n,e,mz:camZ((e.x0+e.x1)/2,0,(e.z0+e.z1)/2)});
+    });
+  });
+  ITEM_NODES.forEach(n=>{
+    if(!n.from) return;
+    n.from.forEach(fid=>{
+      const s=itemNodeById[fid]||planNodeById[fid]; if(!s) return;
+      const e=edgeClip(s,n); if(!e) return;
+      list.push({a:s,b:n,e,mz:camZ((e.x0+e.x1)/2,0,(e.z0+e.z1)/2)});
+    });
+  });
+  list.sort((p,q)=>p.mz-q.mz);
+  list.forEach(o=>{
+    const p0=proj(o.e.x0,0,o.e.z0), p1=proj(o.e.x1,0,o.e.z1);
+    const f=p0.f, ks=f*scale;
+    ctx.save();
+    if(o.a.state==='locked'||o.b.state==='locked'){
+      ctx.strokeStyle=rgba(P.lineSoft,0.6);
+      ctx.lineWidth=2*ks;
+      ctx.setLineDash([5*ks,7*ks]);
+    }else if(o.b.state==='in_progress'){
+      ctx.strokeStyle=P.accent;
+      ctx.lineWidth=3*ks;
+      ctx.setLineDash([7*ks,9*ks]);
+      ctx.lineDashOffset=-((t*16*ks)%(16*ks));
+    }else{
+      ctx.strokeStyle=rgba(P.accentFocus,0.65);
+      ctx.lineWidth=2*ks;
+      ctx.setLineDash([7*ks,9*ks]);
+      ctx.lineDashOffset=-((t*16*ks)%(16*ks));
+    }
+    ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
+    ctx.restore();
+  });
+}
+
+function drawCardContent(n,st,W_,H_){
+  const padX=13;
+  const metaBottom=H_-10, pillH=15;
+  const metaTop=metaBottom-pillH;
+  const nameBase=metaTop-2;
+  let fs=(n.type==='boss')?15:14;
+  ctx.font='600 '+fs+'px Inter,sans-serif';
+  let nw=ctx.measureText(n.name).width;
+  while(nw>(W_-2*padX)&&fs>9){ fs-=0.5; ctx.font='600 '+fs+'px Inter,sans-serif'; nw=ctx.measureText(n.name).width; }
+  const kickBase=nameBase-4-fs;
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  ctx.font='700 9.5px Inter,sans-serif';
+  ctx.fillStyle=st.kicker;
+  let x=padX;
+  for(const ch of TYPE_LABEL[n.type]){ ctx.fillText(ch,x,kickBase); x+=ctx.measureText(ch).width+1.1; }
+  ctx.font='600 '+fs+'px Inter,sans-serif';
+  ctx.fillStyle=st.name;
+  ctx.fillText(n.name,padX,nameBase);
+  const b=badgeStyle(n);
+  ctx.font='700 9px Inter,sans-serif';
+  const tw=ctx.measureText(b.text).width;
+  const pw=tw+12;
+  rr(padX,metaTop,pw,pillH,pillH/2);
+  ctx.fillStyle=b.bg; ctx.fill();
+  ctx.fillStyle=b.fg;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(b.text,padX+pw/2,metaBottom-pillH/2+0.5);
+  ctx.textAlign='left';
+  let sx=padX+pw+8; const sy=metaBottom-pillH/2+0.5;
+  for(let i=0;i<3;i++){
+    ctx.fillStyle=i<n.stars?st.starOn:st.starOff;
+    ctx.fillText('●',sx,sy);
+    sx+=ctx.measureText('●').width+2;
+  }
+}
+
+function drawCard(n,nwT,neT,swT,st){
+  const ux=(neT.x-nwT.x)/n.w, uy=(neT.y-nwT.y)/n.w;
+  const vx=(swT.x-nwT.x)/n.h, vy=(swT.y-nwT.y)/n.h;
+  const uLen=Math.hypot(ux,uy), vLen=Math.hypot(vx,vy);
+  const av=(uLen+vLen)/2||1;
+  const W_=n.w, H_=n.h, R=0;
+  const now=performance.now();
+  ctx.save();
+  ctx.transform(ux,uy,vx,vy,nwT.x,nwT.y);
+  ctx.lineJoin='round';
+  rr(0,0,W_,H_,R);
+  if(st.grad){
+    const g=ctx.createLinearGradient(0,0,0,H_);
+    g.addColorStop(0,P.accent); g.addColorStop(1,P.accentHover);
+    ctx.fillStyle=g;
+  }else{
+    ctx.fillStyle=st.fill;
+  }
+  ctx.fill();
+  if(st.borderW>0){
+    ctx.lineWidth=st.borderW/av;
+    ctx.strokeStyle=st.border;
+    if(st.dash) ctx.setLineDash([6/av,5/av]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  if(hoverId===n.id && n.state!=='locked'){
+    rr(0,0,W_,H_,R);
+    ctx.fillStyle='rgba(255,255,255,0.07)';
+    ctx.fill();
+  }
+  if(n.state==='in_progress'){
+    const p=(now/1800)%1, a=0.35*(1-p), off=p*10;
+    rr(-off,-off,W_+2*off,H_+2*off,R+off);
+    ctx.lineWidth=2.5/av; ctx.strokeStyle=rgba(P.accent,a); ctx.stroke();
+  }
+  if(n.today && n.state!=='locked'){
+    rr(-3,-3,W_+6,H_+6,R+3);
+    ctx.lineWidth=3/av; ctx.strokeStyle=rgba(P.accent,0.45); ctx.stroke();
+  }
+  if(selected===n.id){
+    rr(-2,-2,W_+4,H_+4,R+2);
+    ctx.lineWidth=3/av; ctx.strokeStyle=P.accentFocus; ctx.stroke();
+  }
+  if(centeredId===n.id && now-centerT<1600){
+    rr(-3,-3,W_+6,H_+6,R+3);
+    ctx.lineWidth=2/av; ctx.strokeStyle=P.accentFocus;
+    ctx.setLineDash([6/av,5/av]); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if(n.state==='locked'){
+    ctx.font='700 22px Inter,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=P.ink3;
+    ctx.fillText('?',W_/2,H_/2);
+  }else{
+    drawCardContent(n,st,W_,H_);
+  }
+  ctx.restore();
+}
+
+function drawNode(n){
+  const T=TH(n);
+  const nw0=proj(n.x,0,n.z), ne0=proj(n.x+n.w,0,n.z);
+  const sw0=proj(n.x,0,n.z+n.h), se0=proj(n.x+n.w,0,n.z+n.h);
+  const nwT=proj(n.x,-T,n.z), neT=proj(n.x+n.w,-T,n.z);
+  const swT=proj(n.x,-T,n.z+n.h), seT=proj(n.x+n.w,-T,n.z+n.h);
+  const st=nodeStyle(n);
+  const ws=wallShades(n);
+  ctx.save();
+  wall(ne0,se0,seT,neT,ws[1]);
+  wall(sw0,se0,seT,swT,ws[0]);
+  ctx.restore();
+  drawCard(n,nwT,neT,swT,st);
+}
+
+function draw(){
+  const now=performance.now();
+  const t=now/1000;
+  th=RX*Math.PI/180 + 0.8*Math.PI/180*Math.sin(now/1432);
+  sc=Math.cos(th); sw=Math.sin(th);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle=P.bg;
+  ctx.fillRect(0,0,vw,vh);
+  const g1=ctx.createRadialGradient(vw*0.3,vh*0.2,0,vw*0.3,vh*0.2,vw*0.6);
+  g1.addColorStop(0,rgba(P.accent,0.07)); g1.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g1; ctx.fillRect(0,0,vw,vh);
+  const g2=ctx.createRadialGradient(vw*0.8,vh*0.8,0,vw*0.8,vh*0.8,vw*0.6);
+  g2.addColorStop(0,rgba(P.ok,0.05)); g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2; ctx.fillRect(0,0,vw,vh);
+
+  drawZones();
+  drawEdges(t);
+  NODES.slice().sort((a,b)=>nodeDepth(a)-nodeDepth(b)).forEach(drawNode);
+  PLAN_NODES.slice().sort((a,b)=>nodeDepth(a)-nodeDepth(b)).forEach(drawNode);
+  ITEM_NODES.slice().sort((a,b)=>nodeDepth(a)-nodeDepth(b)).forEach(drawNode);
+}
+function nodeDepth(n){ return camZ(n.x+n.w/2, -TH(n)/2, n.z+n.h/2); }
+
+function loop(){ draw(); requestAnimationFrame(loop); }
+
+/* ============ ヒットテスト ============ */
+function hitTest(mx,my){
+  const order=NODES.concat(PLAN_NODES,ITEM_NODES).slice().sort((a,b)=>nodeDepth(a)-nodeDepth(b));
+  for(let i=order.length-1;i>=0;i--){
+    const n=order[i], T=TH(n);
+    const tl=proj(n.x,-T,n.z), tr=proj(n.x+n.w,-T,n.z);
+    const br=proj(n.x+n.w,-T,n.z+n.h), bl=proj(n.x,-T,n.z+n.h);
+    if(pointInQuad(mx,my,tl,tr,br,bl)) return n.id;
+    const nw0=proj(n.x,0,n.z), ne0=proj(n.x+n.w,0,n.z), sw0=proj(n.x,0,n.z+n.h), se0=proj(n.x+n.w,0,n.z+n.h);
+    const nwT=proj(n.x,-T,n.z), neT=proj(n.x+n.w,-T,n.z), swT=proj(n.x,-T,n.z+n.h), seT=proj(n.x+n.w,-T,n.z+n.h);
+    if(pointInQuad(mx,my,sw0,se0,seT,swT)) return n.id;
+    if(pointInQuad(mx,my,ne0,se0,seT,neT)) return n.id;
+  }
+  return null;
+}
+
+/* ============ パン / ズーム ============ */
+function zoomAt(f,pt){
+  const nx=scale*f;
+  if(nx<0.3||nx>3) return;
+  const k=nx/scale;
+  tx=pt.x-(pt.x-tx)*k;
+  ty=pt.y-(pt.y-ty)*k;
+  scale=nx;
+}
+function zoomBy(f){ zoomAt(f,{x:vw/2,y:vh/2}); }
+function resetView(){
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  const add=(x,y)=>{ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; };
+  ZONES.forEach(zo=>{
+    [[zo.x,zo.y],[zo.x+zo.w,zo.y],[zo.x,zo.y+zo.h],[zo.x+zo.w,zo.y+zo.h]]
+      .forEach(([x,z])=>{ const p=proj0(x,0,z,1); add(p.x,p.y); });
+  });
+  NODES.forEach(n=>{
+    const T=TH(n);
+    [[n.x,n.z],[n.x+n.w,n.z],[n.x,n.z+n.h],[n.x+n.w,n.z+n.h]]
+      .forEach(([x,z])=>{ const p=proj0(x,-T,z,1); add(p.x,p.y); });
+  });
+  PLAN_NODES.forEach(n=>{
+    const T=TH(n);
+    [[n.x,n.z],[n.x+n.w,n.z],[n.x,n.z+n.h],[n.x+n.w,n.z+n.h]]
+      .forEach(([x,z])=>{ const p=proj0(x,-T,z,1); add(p.x,p.y); });
+  });
+  ITEM_NODES.forEach(n=>{
+    const T=TH(n);
+    [[n.x,n.z],[n.x+n.w,n.z],[n.x,n.z+n.h],[n.x+n.w,n.z+n.h]]
+      .forEach(([x,z])=>{ const p=proj0(x,-T,z,1); add(p.x,p.y); });
+  });
+  const bw=maxX-minX, bh=maxY-minY;
+  if(bw<=0||bh<=0) return;
+  let ns=Math.min(vw/(bw*1.15), vh/(bh*1.15));
+  ns=Math.max(0.3,Math.min(3,ns));
+  scale=ns;
+  tx=vw/2-(minX+maxX)/2*ns;
+  ty=vh/2-(minY+maxY)/2*ns;
+}
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const r=viewport.getBoundingClientRect();
+  zoomAt(e.deltaY<0?1.1:0.9,{x:e.clientX-r.left,y:e.clientY-r.top});
+},{passive:false});
+
+let dragging=false,moved=false,sx=0,sy=0,stx=0,sty=0;
+cv.addEventListener('pointerdown',e=>{
+  dragging=true; moved=false; sx=e.clientX; sy=e.clientY; stx=tx; sty=ty;
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove',e=>{
+  const r=viewport.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  if(dragging){
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(Math.abs(dx)>3||Math.abs(dy)>3) moved=true;
+    if(moved){ tx=stx+dx; ty=sty+dy; cv.classList.add('dragging'); }
+  }else{
+    hoverId=hitTest(mx,my);
+    cv.style.cursor=hoverId?'pointer':'grab';
+  }
+});
+cv.addEventListener('pointerup',e=>{
+  if(!dragging) return;
+  dragging=false;
+  cv.classList.remove('dragging');
+});
+cv.addEventListener('click',e=>{
+  if(moved) return;
+  const r=viewport.getBoundingClientRect();
+  const id=hitTest(e.clientX-r.left,e.clientY-r.top);
+  if(id) selectNode(id);
+  else { selected=null; document.getElementById('panel').style.display='none'; }
+});
+cv.addEventListener('pointerleave',()=>{ hoverId=null; });
+window.addEventListener('resize',resize);
+
+/* ============ 現在地へ移動 ============ */
+function centerOn(id){
+  const n=nodeById[id];
+  const T=TH(n);
+  const c=proj0(n.x+n.w/2,-T,n.z+n.h/2,scale);
+  tx=vw/2-c.x;
+  ty=vh/2-c.y;
+  centeredId=id; centerT=performance.now();
+}
+
+/* ============ 詳細パネル ============ */
+let selected=null, centeredId=null, centerT=0;
+function starsHTML(n){
+  let s='';
+  for(let i=0;i<3;i++) s+= i<n.stars ? '●':'<span class="off">●</span>';
+  return s;
+}
+function badgeHTML(n){
+  if(n.type==='gate') return `<span class="badge b-gate">${n.state==='green'?'通過済み':(n.state==='locked'?'ロック':'診断ゲート')}</span>`;
+  const map={green:'b-ok',yellow:'b-warn',red:'b-ng',in_progress:'b-prog',unlocked:'b-idle'};
+  const c=map[n.state]||'b-idle';
+  return `<span class="badge ${c}">${STATE_LABEL[n.state]}</span>`;
+}
+function selectNode(id){
+  selected=id;
+  const n=getNode(id);
+  const panel=document.getElementById('panel');
+  if(n.zone==='P'&&n.type!=='plan'){
+    const done=n.state==='green';
+    const froms=(n.from||[]).map(f=>itemNodeById[f]?.name||planNodeById[f]?.name).filter(Boolean);
+    panel.style.display='block';
+    panel.innerHTML=`
+      <div class="pk">${TYPE_LABEL[n.type]} ・ ${esc(n.planName||'')} ・ Day ${n.day}</div>
+      <h3>${esc(n.name)}</h3>
+      <div class="row"><span class="badge ${done?'b-ok':'b-violet'}">${done?'完了':'未着手'}</span>${n.stars?`<span class="stars">${starsHTML(n)}</span>`:''}</div>
+      ${froms.length?`<div class="row"><b>前提:</b> ${froms.join('、')}</div>`:''}
+      <div class="desc">${n.content?esc(n.content):TYPE_DESC[n.type]||''}</div>
+      ${n.problems&&n.problems.length?`<div class="qcount">復習問題 ${n.problems.length} 問</div>`:''}
+      <div class="actions">
+        ${n.problems&&n.problems.length?`<button class="btn primary" onclick="startNodeQuiz('${n.id}')">問題で練習</button>`:''}
+        ${done?`<button class="btn danger" onclick="itemReset('${n.id}')">未着手に戻す</button>`:`<button class="btn" onclick="itemDone('${n.id}')">このノードを完了にする</button>`}
+      </div>`;
+    return;
+  }
+  if(n.type==='plan'){
+    const draft=n.pstatus==='draft';
+    panel.style.display='block';
+    panel.innerHTML=`
+      <div class="pk">プラン ・ 教材フォルダから自動作成</div>
+      <h3>${esc(n.name)}</h3>
+      <div class="row"><span class="badge ${draft?'b-ok':'b-violet'}">${draft?'構築済み':'中身なし'}</span><span class="meta2">${n.material_count} 件の教材${draft?(' ・ '+n.built_count+'ノードの学習マップ'):''}</span></div>
+      <div class="desc">${TYPE_DESC.plan}</div>
+      <div class="actions">
+        <button class="btn primary" onclick="openPlanBuilder(${n.planId})">${draft?'プランを確認・組み直す':'このプランを構築'}</button>
+        <button class="btn" onclick="location.href='materials.html'">教材ページを開く</button>
+      </div>`;
+    return;
+  }
+  const zoneName=n.zone==='A'?'光合成':'細胞分裂';
+  const stateBadge=badgeHTML(n);
+  const froms=n.from?n.from.map(f=>nodeById[f]?.name).filter(Boolean):[];
+  const prereq=froms.length?`<div class="row"><b>前提:</b> ${froms.join('、')}</div>`:'';
+  let mem='';
+  if(n.state==='yellow'||n.state==='red') mem=`<div class="mem"><span class="mk">AI 記憶術</span>${MEMO[n.state]||''}</div>`;
+  if(n.state==='locked') mem=`<div class="mem"><span class="mk">解放条件</span>前提ノードを全てクリアすると解放されます。シルエットの内容は先の章で解放されます。</div>`;
+  let rhythm='';
+  if(n.type!=='gate' && n.type!=='boss'){
+    rhythm=`<div class="rhythm"><div class="rt">2日リズム</div>
+      <div class="rd"><b>Day1 わかる</b> 発見 → 理解チェック → なぜ3つ → 白紙</div>
+      <div class="rd"><b>Day2 できる</b> 演習 → 誤答処理 → クリア判定</div></div>`;
+  }
+  let actions='';
+  if(n.state==='locked'){
+    actions=`<button class="btn" disabled>前提ノードをクリアで解放</button>`;
+  }else if(n.type==='gate'){
+    if(n.state==='green') actions=`<button class="btn" disabled>通過済み（弱点なし）</button>`;
+    else actions=`<button class="btn primary" onclick="runGate('${n.id}')">診断ゲートを実行</button>`;
+  }else if(n.type==='boss'){
+    actions=`<button class="btn primary" onclick="runGate('${n.id}')">診断ゲートを実行</button>
+             <button class="btn" onclick="runBoss('${n.id}')" ${n.state==='locked'?'disabled':''}>ボスに挑戦</button>`;
+  }else if(n.state==='in_progress'){
+    actions=`<button class="btn primary" onclick="goStudy('${n.id}',${n.day||1})">Day ${n.day||1} を続行</button>
+             <button class="btn danger" onclick="demote('${n.id}')">やめて後回し</button>`;
+  }else if(n.state==='green'){
+    actions=`<button class="btn danger" onclick="demote('${n.id}')">実は怪しい → 黄に降格</button>
+             <button class="btn" onclick="goReview('${n.id}')">復習ステージへ</button>`;
+  }else if(n.state==='yellow'||n.state==='red'){
+    actions=`<button class="btn primary" onclick="goStudy('${n.id}',${n.day||1})">補強ブランチを開始</button>
+             <button class="btn" onclick="goStudy('${n.id}',2)">再挑戦する</button>`;
+  }else{
+    actions=`<button class="btn primary" onclick="goStudy('${n.id}',1)">Day 1 を開始</button>`;
+  }
+
+  panel.style.display='block';
+  panel.innerHTML=`
+    <div class="pk">${TYPE_LABEL[n.type]} ステージ ・ ${zoneName}</div>
+    <h3>${n.name}</h3>
+    <div class="row">${stateBadge}<span class="stars">${starsHTML(n)}</span></div>
+    ${prereq}
+    <div class="desc">${TYPE_DESC[n.type]}</div>
+    ${rhythm}
+    ${mem}
+    <div class="actions">${actions}</div>`;
+}
+
+/* ============ アクション ============ */
+function itemDone(id){
+  const n=itemNodeById[id];
+  if(!n) return;
+  n.state='green'; n.stars=1;
+  saveItemState();
+  selectNode(id);
+  toast('「'+n.name+'」を完了にしました');
+}
+function itemReset(id){
+  const n=itemNodeById[id];
+  if(!n) return;
+  n.state='unlocked'; n.stars=0;
+  saveItemState();
+  selectNode(id);
+}
+function demote(id){
+  const n=nodeById[id];
+  n.state='yellow';
+  selected=null;
+  document.getElementById('panel').style.display='none';
+  updateStats();
+  saveMapState();
+  toast(`「${n.name}」を黄（怪しい）に降格しました。プランを再計算しました。`);
+}
+let gate=null;
+function runGate(id){
+  const n=nodeById[id];
+  selected=null;
+  document.getElementById('panel').style.display='none';
+  const prereqs=(n.from||[]).map(f=>nodeById[f]).filter(Boolean);
+  const items=[];
+  let gi=0;
+  prereqs.forEach(p=>{
+    const qd=QUIZ[p.id]||QUIZ_FALLBACK;
+    (qd.qs||[]).forEach(q=>{
+      items.push({node:p,q:q.q,a:q.a,mark:undefined,idx:gi});
+      gi++;
+    });
+  });
+  if(!items.length){ toast('診断できる前提ノードがありません'); return; }
+  gate={id,items};
+  document.getElementById('gateTitle').textContent=n.name+'（診断ゲート）';
+  document.getElementById('gateDesc').textContent='前提ノード「'+prereqs.map(p=>p.name).join('、')+'」から混合問題で出題します（インターリービング診断）。答えを確認して ○/× で判定してください。';
+  renderGateQ();
+  renderGateFoot(false);
+  document.getElementById('gate').style.display='block';
+}
+function renderGateQ(){
+  document.getElementById('gateQ').innerHTML=gate.items.map((it,i)=>`
+    <div class="it">
+      <div class="qn">${it.node.name}</div>
+      <div class="q">Q${i+1}. ${it.q}</div>
+      <button class="mk" style="padding:3px 10px;margin:0 0 8px" onclick="gateReveal(${i})">答えを表示</button>
+      <div class="ans" id="ga${i}">→ ${it.a}</div>
+      <div class="mark">
+        <button class="mk ok ${it.mark===true?'sel':''}" onclick="gateMark(${i},true)">○ 正解</button>
+        <button class="mk no ${it.mark===false?'sel':''}" onclick="gateMark(${i},false)">× 不正解</button>
+      </div>
+    </div>`).join('');
+}
+function gateReveal(i){
+  const el=document.getElementById('ga'+i);
+  if(el) el.style.display='block';
+}
+function gateMark(i,ok){
+  const it=gate.items[i];
+  it.mark=ok;
+  const itEl=document.querySelectorAll('#gateQ .it')[i];
+  const okB=itEl.querySelector('.mk.ok'), noB=itEl.querySelector('.mk.no');
+  if(okB) okB.classList.toggle('sel',ok);
+  if(noB) noB.classList.toggle('sel',!ok);
+  gateReveal(i);
+}
+function gateJudge(){
+  const byNode={};
+  gate.items.forEach(it=>{
+    byNode[it.node.id]=byNode[it.node.id]||{node:it.node,ok:0,ng:0,no:0};
+    if(it.mark===true) byNode[it.node.id].ok++;
+    else if(it.mark===false) byNode[it.node.id].ng++;
+    else byNode[it.node.id].no++;
+  });
+  const results=Object.values(byNode).map(r=>{
+    const total=r.ok+r.ng+r.no;
+    const fail=r.ng>0||r.no>0;
+    if(fail&&r.node.state!=='locked'){ r.node.state='yellow'; }
+    return {...r, total, fail, pct:total?Math.round(r.ok/total*100):0};
+  });
+  const failed=results.filter(r=>r.fail);
+  if(failed.length===0 && gate.id && nodeById[gate.id].state!=='green'){
+    const g=nodeById[gate.id];
+    if(g.state!=='locked'){ g.state='green'; }
+  }
+  updateStats();
+  saveMapState();
+  const html=results.map(r=>
+    `<div class="rw ${r.fail?'fail':'pass'}">
+       <span class="st"></span>
+       <span class="nm">${r.node.name}</span>
+       <span class="sub">${r.ok}/${r.total} 正解 ${r.fail?'・ 黄に降格':''}${r.no?'・ 未判定あり':''}</span>
+     </div>`).join('');
+  document.getElementById('gateQ').innerHTML=`<div class="rst">${html}</div>`;
+  document.getElementById('gateDesc').textContent=failed.length
+    ? '弱点が検出されました。該当ノードを黄（怪しい）に降格し、補強ブランチを提示します。'
+    : 'すべて合格です。このまま先に進めます。';
+  renderGateFoot(true, failed);
+}
+function renderGateFoot(done, failed){
+  const foot=document.getElementById('gateFoot');
+  if(!done){
+    foot.innerHTML=`<div class="hint">全問に ○/× を付けてから判定してください</div>
+      <button class="btn primary" onclick="gateJudge()">判定する</button>
+      <button class="btn" onclick="gateClose()">キャンセル</button>`;
+    return;
+  }
+  if(failed&&failed.length){
+    const weak=failed[0];
+    foot.innerHTML=`<button class="btn primary" onclick="goStudy('${weak.node.id}',1)">補強してから進む</button>
+      <button class="btn" onclick="gateClose()">このまま進む</button>`;
+  }else{
+    foot.innerHTML=`<button class="btn primary" onclick="gateClose()">このまま進む</button>`;
+  }
+}
+function gateClose(){
+  document.getElementById('gate').style.display='none';
+  gate=null;
+  nodeQuiz=null;
+}
+
+/* ============ ノードの問題練習（サブエージェント生成の問題） ============ */
+let nodeQuiz=null;
+function startNodeQuiz(id){
+  const n=itemNodeById[id];
+  if(!n) return;
+  selected=null;
+  document.getElementById('panel').style.display='none';
+  const items=(n.problems||[]).map((p,i)=>({
+    node:n,q:p.q||'',opts:p.options||[],a:p.a||'',why:p.why||'',
+    mark:undefined,idx:i,
+  }));
+  if(!items.length){ toast('このノードには問題がまだありません'); return; }
+  nodeQuiz={id,items};
+  document.getElementById('gateTitle').textContent=n.name+'（問題練習）';
+  document.getElementById('gateDesc').textContent='問題に答えを思い浮かべて「答えを表示」→ ○/× で自己判定。× の理由(why)を読んで補強しましょう。';
+  document.getElementById('gateFoot').innerHTML=`<div class="hint">全問に ○/× を付けてから判定してください</div>
+    <button class="btn primary" onclick="nodeQuizJudge()">判定する</button>
+    <button class="btn" onclick="gateClose()">キャンセル</button>`;
+  renderNodeQuizQ();
+  document.getElementById('gate').style.display='block';
+}
+function renderNodeQuizQ(){
+  document.getElementById('gateQ').innerHTML=(nodeQuiz.items||[]).map((it,i)=>`
+    <div class="it">
+      <div class="qn">Q${i+1}</div>
+      <div class="q">${esc(it.q)}</div>
+      ${it.opts&&it.opts.length?`<div class="opts">${it.opts.map((o,j)=>`<div class="opt" id="o${i}_${j}">${esc(o)}</div>`).join('')}</div>`:''}
+      <button class="mk" style="flex:none;padding:3px 10px;margin:0 0 8px" onclick="nodeQuizReveal(${i})">答えを表示</button>
+      <div class="ans" id="qa${i}">${it.why?`<b>→ ${esc(it.a)}</b><br>${esc(it.why)}`:`→ ${esc(it.a)}`}</div>
+      <div class="mark">
+        <button class="mk ok ${it.mark===true?'sel':''}" onclick="nodeQuizMark(${i},true)">○ 正解</button>
+        <button class="mk no ${it.mark===false?'sel':''}" onclick="nodeQuizMark(${i},false)">× 不正解</button>
+      </div>
+    </div>`).join('');
+}
+function nodeQuizReveal(i){
+  const el=document.getElementById('qa'+i);
+  if(el) el.style.display='block';
+}
+function nodeQuizMark(i,ok){
+  const it=nodeQuiz.items[i];
+  it.mark=ok;
+  const itEl=document.querySelectorAll('#gateQ .it')[i];
+  if(itEl){
+    const okB=itEl.querySelector('.mk.ok'), noB=itEl.querySelector('.mk.no');
+    if(okB) okB.classList.toggle('sel',ok);
+    if(noB) noB.classList.toggle('sel',!ok);
+  }
+  nodeQuizReveal(i);
+}
+function nodeQuizJudge(){
+  const items=nodeQuiz.items||[];
+  if(items.some(it=>it.mark===undefined)){ toast('全問に ○/× を付けてください'); return; }
+  const n=itemNodeById[nodeQuiz.id];
+  const ok=items.filter(it=>it.mark).length;
+  const total=items.length;
+  if(n){
+    if(ok===total){ n.state='green'; n.stars=Math.max(1,n.stars||0); }
+    else{ n.state='yellow'; }
+    saveItemState();
+  }
+  document.getElementById('gateQ').innerHTML=`<div class="rst">
+    <div class="rw ${ok===total?'pass':'fail'}"><span class="st"></span>
+      <span class="nm">${esc(n?n.name:'')}</span>
+      <span class="sub">${ok}/${total} 正解 ${ok===total?'・ クリア！':'・ 怪しい → 黄に更新'}</span></div>
+  </div>`;
+  document.getElementById('gateDesc').textContent=ok===total
+    ? '全問正解です。このノードを完了にしました。'
+    : '間違えた問題は why の解説を読み、翌日に復習しましょう。';
+  document.getElementById('gateFoot').innerHTML=`<button class="btn primary" onclick="gateClose()">閉じる</button>`;
+  draw();
+}
+
+/* ============ ボスステージ（時間制限テスト） ============ */
+let boss=null, bossTimerInt=null, bossLeft=0;
+const BOSS_TIME=300;
+function runBoss(id){
+  const n=nodeById[id];
+  selected=null;
+  document.getElementById('panel').style.display='none';
+  const pool=NODES.filter(x=>x.zone===n.zone&&x.id!==n.id);
+  const items=[];
+  let gi=0;
+  pool.forEach(p=>{
+    const qd=QUIZ[p.id]||QUIZ_FALLBACK;
+    (qd.qs||[]).forEach(q=>{ items.push({node:p,q:q.q,a:q.a,mark:undefined,idx:gi}); gi++; });
+  });
+  items.sort(()=>Math.random()-0.5);
+  const sel=items.slice(0,10);
+  if(!sel.length){ toast('このボスに出題できる問題がありません'); return; }
+  boss={id,items:sel};
+  document.getElementById('bossTitle').textContent=n.name;
+  document.getElementById('bossDesc').textContent='制限時間内に全問へ ○/× を付けてください。時間切れで自動判定します。';
+  renderBossQ();
+  renderBossFoot(false);
+  document.getElementById('boss').style.display='block';
+  bossLeft=BOSS_TIME;
+  updateBossTimer();
+  clearInterval(bossTimerInt);
+  bossTimerInt=setInterval(()=>{
+    bossLeft--;
+    updateBossTimer();
+    if(bossLeft<=0){ clearInterval(bossTimerInt); bossJudge(true); }
+  },1000);
+}
+function updateBossTimer(){
+  const el=document.getElementById('bossTimer');
+  const m=Math.floor(Math.max(0,bossLeft)/60), s=Math.max(0,bossLeft)%60;
+  el.textContent=m+':'+String(s).padStart(2,'0');
+  el.style.color=bossLeft<=60?'var(--ng)':'var(--ink-2)';
+}
+function renderBossQ(){
+  document.getElementById('bossQ').innerHTML=boss.items.map((it,i)=>`
+    <div class="it">
+      <div class="qn">${it.node.name}</div>
+      <div class="q">Q${i+1}. ${it.q}</div>
+      <button class="mk" style="padding:3px 10px;margin:0 0 8px" onclick="bossReveal(${i})">答えを表示</button>
+      <div class="ans" id="ba${i}">→ ${it.a}</div>
+      <div class="mark">
+        <button class="mk ok ${it.mark===true?'sel':''}" onclick="bossMark(${i},true)">○ 正解</button>
+        <button class="mk no ${it.mark===false?'sel':''}" onclick="bossMark(${i},false)">× 不正解</button>
+      </div>
+    </div>`).join('');
+}
+function bossReveal(i){
+  const el=document.getElementById('ba'+i);
+  if(el) el.style.display='block';
+}
+function bossMark(i,ok){
+  const it=boss.items[i];
+  it.mark=ok;
+  const itEl=document.querySelectorAll('#bossQ .it')[i];
+  const okB=itEl.querySelector('.mk.ok'), noB=itEl.querySelector('.mk.no');
+  if(okB) okB.classList.toggle('sel',ok);
+  if(noB) noB.classList.toggle('sel',!ok);
+  bossReveal(i);
+}
+function bossJudge(forced){
+  clearInterval(bossTimerInt);
+  const total=boss.items.length;
+  const okC=boss.items.filter(x=>x.mark===true).length;
+  const pct=Math.round(okC/total*100);
+  const stars=pct>=80?3:(pct>=60?2:(pct>=40?1:0));
+  const pass=stars>0;
+  const n=nodeById[boss.id];
+  if(pass&&n.state!=='locked'){ n.state='green'; n.stars=stars; }
+  updateStats();
+  saveMapState();
+  const starHtml=stars?('●'.repeat(stars)+'<span class="off">'+'●'.repeat(3-stars)+'</span>'):'<span class="off">●●●</span>';
+  const resultHTML=`<div class="rst">
+      <div class="rw ${pass?'pass':'fail'}">
+        <span class="st"></span>
+        <span class="nm">正答率 ${pct}%</span>
+        <span class="sub">${okC}/${total} 正解</span>
+      </div>
+      <div class="rw ${pass?'pass':'fail'}" style="border:none">
+        <span class="st"></span>
+        <span class="nm">獲得スター</span>
+        <span class="stars2" style="flex:1;text-align:right">${starHtml}</span>
+      </div>
+    </div>`;
+  document.getElementById('bossQ').innerHTML=resultHTML;
+  document.getElementById('bossDesc').textContent=pass
+    ? (stars>=3?'完璧です！章をクリアしました。':'章をクリアしました。忘れる前に復習を始めましょう。')
+    : (forced?'時間切れです。もう一度チャレンジしましょう。':'残念。補強してから再挑戦しましょう。');
+  renderBossFoot(true,pass);
+}
+function renderBossFoot(done,pass){
+  const foot=document.getElementById('bossFoot');
+  if(!done){
+    foot.innerHTML=`<div class="hint">${BOSS_TIME/60}分以内に全問を判定してください</div>
+      <button class="btn primary" onclick="bossJudge(false)">時間前に判定</button>
+      <button class="btn" onclick="bossClose()">キャンセル</button>`;
+    return;
+  }
+  if(pass){
+    foot.innerHTML=`<button class="btn primary" onclick="goReview('${boss.id}')">復習を始める</button>
+      <button class="btn" onclick="bossClose()">閉じる</button>`;
+  }else{
+    foot.innerHTML=`<button class="btn primary" onclick="bossClose();runBoss('${boss.id}')">再挑戦する</button>
+      <button class="btn" onclick="bossClose()">閉じる</button>`;
+  }
+}
+function bossClose(){
+  clearInterval(bossTimerInt);
+  document.getElementById('boss').style.display='none';
+  boss=null;
+}
+
+/* ============ 記憶術（AI提案） ============ */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ============ 統計 ============ */
+function updateStats(){
+  const done=NODES.filter(n=>n.state==='green').length;
+  const total=NODES.length;
+  const pct=Math.round(done/total*100);
+  document.getElementById('mapBar').style.width=pct+'%';
+  document.getElementById('mapProg').textContent=`全体 ${done}/${total} ノード (${pct}%)`;
+  const remaining=NODES.filter(n=>n.state!=='green').length;
+  const pace=remaining/TEST_DAYS;
+  const dl=document.getElementById('dl');
+  dl.innerHTML=`<div class="kv">テストまで <b>${TEST_DAYS}日</b></div><div class="kv">残り <b>${remaining}ノード</b></div><div class="kv">必要ペース <b>${pace.toFixed(2)}/日</b></div><div class="${pace<=0.5?'ok':'warn'}">${pace<=0.5?'計画通り':'やや遅れ'}</div>`;
+  renderTaskbar();
+}
+
+/* ============ 初期化 ============ */
+loadMapState();
+  seedReviews();
+  resize();
+updateStats();
+resetView();
+loadPlans().then(resetView);
+renderTaskbar();
+saveMapState();
+syncTestDate();
+document.getElementById('todayDay').textContent='Day 2 ・ 演習 → クリア判定 ・ 目標 ●●';
+updatePomo();
+loop();
+</script>
+</body>
+</html>

@@ -26,6 +26,10 @@ DEFAULTS = {
     "new_per_day": "20",
     "desired_retention": "0.9",
     "context_char_budget": "12000",
+    "test_date": "",
+    "test_goal": "",
+    "study_method": "",
+    "materials_dir": str(settings.materials_dir),
 }
 
 
@@ -71,21 +75,47 @@ def _mock_response(messages: list[dict], want_json: bool) -> str:
 
     if "追加質問" in text or "チューター" in text:
         return "ご質問ありがとうございます。この問題のポイントは、定義を正確に押さえることです。(モック回答)"
-    if "予想問題" in text or '"problem"' in text:
+    if "プラン相談" in text:
         return json.dumps(
             {
-                "questions": [
+                "message": "了解です。復習を優先するため、前半は新規ノードを1日1つに抑え、後半に演習・合流・復習をまとめて回す配分に変更しました。",
+                "plan": [
+                    {"day": 1, "nodes": ["光合成とは"], "note": "導入を最短で。復習の時間を確保。"},
+                    {"day": 2, "nodes": ["葉緑体とクロロフィル"], "note": "基礎を1つずつ。"},
+                    {"day": 3, "nodes": ["明反応と暗反応"], "note": "仕組みの整理。"},
+                    {"day": 4, "nodes": ["過去問演習: 中間試験 (2024)"], "note": "本番形式で時間を測って解き、弱点を補強。"},
+                    {"day": 5, "nodes": ["光合成のまとめ"], "note": "合流ノードで統合し、以降は復習を毎日。"},
+                ],
+                "summary": "新規を1日1ノードに抑え、テスト前に過去問演習を入れました。",
+            },
+            ensure_ascii=False,
+        )
+    if "日割り" in text or '"plan"' in text:
+        return json.dumps(
+            {
+                "plan": [
                     {
-                        "problem": "水の化学式を答えよ。",
-                        "answer": "H2O",
-                        "explanation": "水は水素2原子と酸素1原子から成る。",
+                        "day": 1,
+                        "nodes": ["光合成とは", "葉緑体とクロロフィル"],
+                        "note": "基礎概念の理解確認から開始。1日2ノードペース。",
                     },
                     {
-                        "problem": "光合成が行われる細胞小器官を答えよ。",
-                        "answer": "葉緑体",
-                        "explanation": "光合成は葉緑体のチラコイドで行われる。",
+                        "day": 2,
+                        "nodes": ["明反応と暗反応"],
+                        "note": "仕組みの整理と演習。",
                     },
-                ]
+                    {
+                        "day": 3,
+                        "nodes": ["光合成のまとめ"],
+                        "note": "合流ノードで統合し、復習を開始。",
+                    },
+                    {
+                        "day": 4,
+                        "nodes": ["過去問演習: 中間試験 (2024)"],
+                        "note": "本番形式で時間を測って解く。間違えた分野を補強。",
+                    },
+                ],
+                "summary": "基礎から順に1日2ノードを目安に消化し、テスト前に過去問演習を組み込みます。(モック)",
             },
             ensure_ascii=False,
         )

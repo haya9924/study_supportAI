@@ -6,9 +6,11 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+ENV_FILE = Path(os.environ.get("ENV_FILE", str(Path(__file__).resolve().parent.parent.parent / ".env")))
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="", extra="ignore")
+    model_config = SettingsConfigDict(env_prefix="", extra="ignore", env_file=str(ENV_FILE))
 
     # データ保存先 (SQLite DB / アップロード原本 / ページ画像)
     data_dir: Path = Path(os.environ.get("DATA_DIR", "./data")).resolve()
@@ -22,9 +24,11 @@ class Settings(BaseSettings):
     )
     default_api_key: str = os.environ.get("OPENAI_API_KEY", "")
     default_vision_model: str = os.environ.get(
-        "VISION_MODEL", "google/gemini-2.5-flash"
+        "VISION_MODEL", "deepseek/deepseek-v4-flash-0731"
     )
-    default_text_model: str = os.environ.get("TEXT_MODEL", "google/gemini-2.5-flash")
+    default_text_model: str = os.environ.get(
+        "TEXT_MODEL", "deepseek/deepseek-v4-flash-0731"
+    )
 
     # OCR 変換パラメータ
     pdf_render_dpi: int = int(os.environ.get("PDF_RENDER_DPI", "150"))
@@ -44,10 +48,14 @@ class Settings(BaseSettings):
     def pages_dir(self) -> Path:
         return self.data_dir / "pages"
 
+    # 教材ライブラリ (マウント方式): library/<科目>/<ファイル> を参照する
+    materials_dir: Path = Path(os.environ.get("MATERIALS_DIR", "./library")).resolve()
+
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.uploads_dir.mkdir(parents=True, exist_ok=True)
         self.pages_dir.mkdir(parents=True, exist_ok=True)
+        self.materials_dir.mkdir(parents=True, exist_ok=True)
 
 
 settings = Settings()

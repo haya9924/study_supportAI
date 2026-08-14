@@ -49,8 +49,9 @@ _ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "prev_reps": "INTEGER DEFAULT 0",
         "prev_is_new": "BOOLEAN DEFAULT 0",
     },
-    "exam_docs": {
-        "questions": "TEXT",  # 構造化された設問 (JSON)
+    "materials": {
+        "year": "VARCHAR DEFAULT ''",
+        "exam_type": "VARCHAR DEFAULT ''",
     },
 }
 

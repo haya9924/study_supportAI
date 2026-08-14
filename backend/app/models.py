@@ -37,6 +37,31 @@ class Course(Base):
     materials: Mapped[list["Material"]] = relationship(
         back_populates="course", cascade="all, delete-orphan"
     )
+    plans: Mapped[list["Plan"]] = relationship(
+        back_populates="course", cascade="all, delete-orphan"
+    )
+
+
+class Plan(Base):
+    """科目ごとの学習プラン。科目フォルダの追加で自動作成され、
+    教材から具体的な日割りプラン(content)を構築できる。"""
+
+    __tablename__ = "plans"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_id: Mapped[int | None] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, default="empty")  # empty/draft
+    test_days: Mapped[int] = mapped_column(Integer, default=14)
+    # {"days": [{"day": n, "nodes": [...], "note": ""}], "summary": ""}
+    content: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+
+    course: Mapped[Course | None] = relationship(back_populates="plans")
 
 
 class Material(Base):
@@ -45,11 +70,13 @@ class Material(Base):
     course_id: Mapped[int | None] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE")
     )
-    kind: Mapped[str] = mapped_column(String, default="lecture")  # lecture/past_exam/other
+    kind: Mapped[str] = mapped_column(String, default="lecture")  # lecture/past_exam/test_info/other
     title: Mapped[str] = mapped_column(String, default="")
     original_filename: Mapped[str] = mapped_column(String, default="")
     stored_path: Mapped[str] = mapped_column(String, default="")
     mime: Mapped[str] = mapped_column(String, default="")
+    year: Mapped[str] = mapped_column(String, default="")  # 過去問: 年度 (例 2024)
+    exam_type: Mapped[str] = mapped_column(String, default="")  # 過去問: 試験名 (例 中間試験)
     status: Mapped[str] = mapped_column(String, default="uploaded")  # uploaded/processing/ready/error
     error: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -79,21 +106,6 @@ class MaterialPage(Base):
     @property
     def has_image(self) -> bool:
         return bool(self.image_path)
-
-
-class ExamDoc(Base):
-    __tablename__ = "exam_docs"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    course_id: Mapped[int | None] = mapped_column(
-        ForeignKey("courses.id", ondelete="SET NULL")
-    )
-    title: Mapped[str] = mapped_column(String, default="")
-    content_md: Mapped[str] = mapped_column(Text, default="")  # 印刷/後方互換用
-    # 構造化された設問: [{problem, answer, explanation, followups: [{role, content}]}]
-    questions: Mapped[list] = mapped_column(JSON, default=list)
-    messages: Mapped[list] = mapped_column(JSON, default=list)  # 生成/改訂の履歴
-    source_material_ids: Mapped[list] = mapped_column(JSON, default=list)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
 class Quiz(Base):

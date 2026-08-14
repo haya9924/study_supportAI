@@ -19,6 +19,10 @@ class SettingsIn(BaseModel):
     new_per_day: str | None = None
     desired_retention: str | None = None
     context_char_budget: str | None = None
+    test_date: str | None = None
+    test_goal: str | None = None
+    study_method: str | None = None
+    materials_dir: str | None = None
 
 
 class SettingsOut(BaseModel):
@@ -29,6 +33,10 @@ class SettingsOut(BaseModel):
     new_per_day: str
     desired_retention: str
     context_char_budget: str
+    test_date: str
+    test_goal: str
+    study_method: str
+    materials_dir: str
     llm_mock: bool
 
 
@@ -42,6 +50,25 @@ class CourseOut(ORMModel):
     name: str
     created_at: datetime
     material_count: int = 0
+
+
+# --- plans ---
+class PlanOut(ORMModel):
+    id: int
+    course_id: int | None
+    name: str
+    status: str
+    test_days: int = 14
+    material_count: int = 0
+    built_count: int = 0
+    days: list[dict] = []
+    nodes: list[dict] = []
+    problems: dict = {}
+    summary: str = ""
+
+
+class PlanBuildIn(BaseModel):
+    test_days: int = 14
 
 
 # --- materials ---
@@ -60,6 +87,8 @@ class MaterialOut(ORMModel):
     kind: str
     title: str
     original_filename: str
+    year: str = ""
+    exam_type: str = ""
     status: str
     error: str
     created_at: datetime
@@ -71,6 +100,13 @@ class MaterialDetail(MaterialOut):
 
 class PageTextIn(BaseModel):
     ocr_text: str
+
+
+class MaterialMetaIn(BaseModel):
+    kind: str = "lecture"
+    title: str | None = None
+    year: str = ""
+    exam_type: str = ""
 
 
 class MaterialTextIn(BaseModel):
@@ -188,22 +224,3 @@ class AttemptOut(BaseModel):
     status: str
     answers: dict
     score: float
-
-
-# --- exam ---
-class ExamOut(ORMModel):
-    id: int
-    course_id: int | None
-    title: str
-    content_md: str
-    questions: list | None = None  # [{problem, answer, explanation, followups}]
-    messages: list
-    created_at: datetime
-
-
-class ExamReviseIn(BaseModel):
-    instruction: str
-
-
-class ExamAskIn(BaseModel):
-    question: str

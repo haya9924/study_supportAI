@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import ocr, schemas
+from .. import materials_scan, ocr, schemas
 from ..config import settings
 from ..db import get_db
 from ..models import Course, Job, Material, MaterialPage
@@ -30,14 +30,28 @@ router = APIRouter(prefix="/api/materials", tags=["materials"])
 def list_materials(
     course_id: int | None = None,
     uncategorized: bool = False,
+    kind: str | None = None,
     db: Session = Depends(get_db),
 ):
+    # マウントされたフォルダを自動スキャンして新規教材を取り込む (冪等・OCRは起動しない)
+    try:
+        materials_scan.scan_library(db)
+    except Exception:  # noqa: BLE001
+        pass
     stmt = select(Material).order_by(Material.created_at.desc())
     if uncategorized:
         stmt = stmt.where(Material.course_id.is_(None))
     elif course_id is not None:
         stmt = stmt.where(Material.course_id == course_id)
+    if kind:
+        stmt = stmt.where(Material.kind == kind)
     return db.scalars(stmt).all()
+
+
+@router.post("/scan")
+def scan_materials(db: Session = Depends(get_db)):
+    """教材フォルダを再スキャンして未登録ファイルを取り込む。"""
+    return materials_scan.scan_library(db)
 
 
 @router.get("/{material_id}", response_model=schemas.MaterialDetail)
@@ -84,12 +98,12 @@ def create_text_material(
 
 @router.post("", response_model=list[schemas.MaterialOut])
 async def upload_materials(
-    background: BackgroundTasks,
     files: list[UploadFile] = File(...),
     course_id: int | None = Form(None),
     kind: str = Form("lecture"),
     db: Session = Depends(get_db),
 ):
+    """ブラウザからのアップロード (互換用)。OCR は自動では起動せず手動で開始する。"""
     created: list[Material] = []
     for uf in files:
         suffix = Path(uf.filename or "file").suffix
@@ -110,7 +124,7 @@ async def upload_materials(
         db.commit()
         db.refresh(material)
 
-        # ページ画像生成 (同期・軽量)
+        # ページ画像生成 (同期・軽量)。OCR は手動で開始する。
         try:
             n = ocr.prepare_pages(db, material)
         except Exception as exc:  # noqa: BLE001
@@ -120,16 +134,49 @@ async def upload_materials(
             created.append(material)
             continue
 
-        # OCR ジョブをバックグラウンド起動
-        job = Job(type="ocr", target_id=material.id, status="running", total=n)
-        db.add(job)
-        material.status = "processing"
-        db.commit()
-        db.refresh(job)
-        background.add_task(ocr.run_ocr_for_material, material.id, job.id)
         created.append(material)
 
     return created
+
+
+@router.post("/{material_id}/ocr")
+def start_ocr(
+    material_id: int, background: BackgroundTasks, db: Session = Depends(get_db)
+):
+    """OCR を手動で開始する。未実施ページを文字起こしする。"""
+    material = db.get(Material, material_id)
+    if material is None:
+        raise HTTPException(404, "教材が見つかりません")
+    if material.status == "processing":
+        raise HTTPException(409, "すでに OCR を実行中です")
+    if not material.pages:
+        raise HTTPException(400, "ページがありません")
+    job = Job(type="ocr", target_id=material.id, status="running", total=len(material.pages))
+    db.add(job)
+    material.status = "processing"
+    material.error = ""
+    db.commit()
+    db.refresh(job)
+    background.add_task(ocr.run_ocr_for_material, material.id, job.id)
+    return {"ok": True, "material_id": material.id, "job_id": job.id}
+
+
+@router.put("/{material_id}/meta", response_model=schemas.MaterialOut)
+def update_meta(
+    material_id: int, payload: schemas.MaterialMetaIn, db: Session = Depends(get_db)
+):
+    """種別・タイトル・年度・試験名を手動で編集する。"""
+    material = db.get(Material, material_id)
+    if material is None:
+        raise HTTPException(404, "教材が見つかりません")
+    material.kind = payload.kind or material.kind
+    if payload.title is not None:
+        material.title = payload.title.strip() or material.title
+    material.year = payload.year
+    material.exam_type = payload.exam_type
+    db.commit()
+    db.refresh(material)
+    return material
 
 
 @router.get("/{material_id}/pages/{page_no}/image")

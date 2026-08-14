@@ -7,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from ..db import get_db
-from ..models import Course, Material
+from ..models import Course, Material, Plan
+from .plans_router import _ensure_plan_for_course
 
 router = APIRouter(prefix="/api/courses", tags=["courses"])
 
@@ -38,6 +39,7 @@ def create_course(payload: schemas.CourseIn, db: Session = Depends(get_db)):
     db.add(course)
     db.commit()
     db.refresh(course)
+    _ensure_plan_for_course(db, course)
     return _to_out(course, 0)
 
 
@@ -50,6 +52,10 @@ def rename_course(
         raise HTTPException(404, "科目が見つかりません")
     course.name = payload.name.strip() or course.name
     db.commit()
+    plan = db.scalar(select(Plan).where(Plan.course_id == course_id))
+    if plan is not None and plan.name != course.name:
+        plan.name = course.name
+        db.commit()
     db.refresh(course)
     count = (
         db.scalar(
